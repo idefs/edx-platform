@@ -1,0 +1,47 @@
+{
+	"mappings": {
+		"transcript": {
+			"properties": {
+				"searchable_text": {
+					"type": "string",
+					"store": "yes",
+					"index": "analyzed",
+					"term_vector": "with_positions_offsets",
+					"analyzer": "transcript_analyzer",
+					"similarity": "BM25"
+				},
+
+				"location": {
+					"type": "string",
+					"store": "yes"
+				}
+			}
+		}
+	},
+
+	"settings": {
+		"analysis":{
+		    "analyzer": {
+
+		        "transcript_analyzer": {
+		            "type": "custom",
+		            "tokenizer": "standard",
+		            "filter": ["asciifolding", "custom_word_delimiter", "lowercase", "custom_stemmer", "shingle"]
+		        }
+		    },
+
+		    "filter" : {
+
+		        "custom_word_delimiter":{
+		            "type": "word_delimiter",
+		            "preserve_original": "true"
+		        },
+
+		        "custom_stemmer": {
+		            "type": "stemmer",
+		            "name": "english"
+		        }
+		    }
+		}
+	}
+}
