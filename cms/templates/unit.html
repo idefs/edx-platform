@@ -48,7 +48,7 @@
         <p class="unit-name-input"><label>${_("Display Name:")}</label><input type="text" value="${unit.display_name_with_default | h}" class="unit-display-name-input" /></p>
           <ol class="components">
             % for id in components:
-            <li class="component" data-id="${id}"/>
+            <li class="component" data-id="${id}"> </li><a href="/test_problem/?location=${id}">Test</a>
             % endfor
             <li class="new-component-item adding">
               <div class="new-component">

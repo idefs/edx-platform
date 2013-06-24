@@ -135,6 +135,11 @@ urlpatterns += (
     url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
 )
 
+if settings.MITX_FEATURES['CONTENT_TESTING']:
+    urlpatterns += (
+        #for content testing
+        url(r'^test_problem[/]*(?P<action>\w*)/$', 'content_testing.views.test_problem', name='testing'),
+    )
 
 if settings.ENABLE_JASMINE:
     urlpatterns += (url(r'^_jasmine/', include('django_jasmine.urls')),)

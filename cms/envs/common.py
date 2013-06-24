@@ -58,7 +58,10 @@ MITX_FEATURES = {
 
     # If set to True, new Studio users won't be able to author courses unless
     # edX has explicitly added them to the course creator group.
-    'ENABLE_CREATOR_GROUP': False
+    'ENABLE_CREATOR_GROUP': False,
+
+    # disable content testing which is in development
+    'CONTENT_TESTING': True,
 }
 ENABLE_JASMINE = False
 
@@ -355,7 +358,10 @@ INSTALLED_APPS = (
     'django_comment_common',
 
     # for course creator table
-    'django.contrib.admin'
+    'django.contrib.admin',
+
+    #automated content testing for custom response
+    'content_testing',
 )
 
 ################# EDX MARKETING SITE ##################################

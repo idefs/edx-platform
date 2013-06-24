@@ -18,7 +18,7 @@ from .progress import Progress
 from xmodule.x_module import XModule
 from xmodule.raw_module import RawDescriptor
 from xmodule.exceptions import NotFoundError, ProcessingError
-from xblock.core import Scope, String, Boolean, Dict, Integer, Float
+from xblock.core import Scope, String, Boolean, Dict, Integer, Float, List
 from .fields import Timedelta, Date
 from django.utils.timezone import UTC
 
@@ -151,6 +151,7 @@ class CapaFields(object):
         help="Source code for LaTeX and Word problems. This feature is not well-supported.",
         scope=Scope.settings
     )
+    tests = List(help="Tests cases for the LCP", default=[1, 'beep', [3, {'whelp': 'taboggin'}]], scope=Scope.settings)
 
 
 class CapaModule(CapaFields, XModule):
