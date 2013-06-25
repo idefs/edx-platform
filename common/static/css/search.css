@@ -1,51 +1,48 @@
-#searchwrapper {
-	width: 250px;
-	height: 30px;
-	background: -moz-linear-gradient(top,  #ffffff 0%, #ededed 49%, #fafafa 50%, #ededed 50%, #dcdcdc 100%); /* FF3.6+ */
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(49%,#ededed), color-stop(50%,#fafafa), color-stop(50%,#ededed), color-stop(100%,#dcdcdc)); /* Chrome,Safari4+ */
-	background: -webkit-linear-gradient(top,  #ffffff 0%,#ededed 49%,#fafafa 50%,#ededed 50%,#dcdcdc 100%); /* Chrome10+,Safari5.1+ */
-	background: -o-linear-gradient(top,  #ffffff 0%,#ededed 49%,#fafafa 50%,#ededed 50%,#dcdcdc 100%); /* Opera 11.10+ */
-	background: -ms-linear-gradient(top,  #ffffff 0%,#ededed 49%,#fafafa 50%,#ededed 50%,#dcdcdc 100%); /* IE10+ */
-	background: linear-gradient(to bottom,  #ffffff 0%,#ededed 49%,#fafafa 50%,#ededed 50%,#dcdcdc 100%); /* W3C */
-	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#dcdcdc',GradientType=0 ); /* IE6-9 */
-
-	padding: 0;
-	margin: 0;
-	position:relative;
+.result-header{
+	text-align: center;
+	word-wrap: normal;
+	padding-top: 20px;
 }
 
-#searchwrapper form { display: inline; }
-
-.searchbox {
-	border:0;
-	background-color:transparent;
-	position:absolute;
-	top:3px;
-	left:0;
-	width:249px;
-	height:25px;
+.result-container{
+    margin: 0 auto;
 }
 
-.searchbox_submit {
-	border: 0;
-	background-image: url("../images/search-icon.svg");
-	background-color: transparent;
-	background-size: cover;
-	position: absolute;
-	top: 4px;
-	left: 225px;
-	width:25px;
-	height:25px;
-}
-
-.searchbox_submit:hover {
-	cursor:pointer;
-	cursor: hand;
-}
-
-.results_snippet{
+.snippet{
 	color: #666666;
 	font-family: "Open Sans", "Arial";
-	font-size: 14px;
 	font-weight: 300;
+	height: 230px;
+	width: 300px;
+	text-align: center;
+    overflow-y: hidden;
+}
+
+.thumbnail-wrapper{
+    width: 285px;
+    overflow:hidden;
+    float: left;
+}
+
+.result-thumbnail{
+    width: 300px;
+    height: 200px;
+    overflow-x: hidden;
+}
+
+.result-container{
+    width: 600px;
+}
+
+.result-snippets{
+    float: left;
+}
+
+.result-title{
+    text-align: center;
+    font-size: 20px;
+}
+
+.page-number{
+    width: 30px;
 }

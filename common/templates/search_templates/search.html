@@ -1,21 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
-
-	<meta charset="utf-8" />
-	<title>Search Attempt</title>
-
-	<link rel="stylesheet" href="static/css/search.css" type="text/css" />
 </head>
 
-<body id="index" class="home">
+<div class="search-wrapper">
+	<span>
+        <form id="query-box" class="auto-submit" action="search" method="get">
+    		<div class="searchbox-wrapper">
+    			% if old_query:
+    			<input type="text" id="searchbox" class="searchbox parameter" name="s" value="${old_query}" onkeydown="searchHandle(event, false)"/>
+    			% else:
+    			<input type="text" id="searchbox" class="searchbox parameter" name="s" value="" onkeydown="searchHandle(event, false)"/>
+    			% endif
+    		</div>
+        </form>
+	</span>
+</div>
 
-	<div id="searchwrapper">
-		<form action="/search" method="post"> {% csrf_token %}
-			<input type="text" class="searchbox" name="s" value="" />
-			<input type="image" src="static/images/search-icon.svg" class="searchbox_submit" value="" />
-		</form>
-	</div>
-	
-</body>
-</html>
+<%def name="css_link(path, media='')">
+	<link rel="stylesheet" type="text/css" href="${path|h}" media="${media}"></link>
+</%def>
+
+<%def name="js_link(path)">
+    <script type="text/javascript" src="${path|h}"></script>
+</%def>
