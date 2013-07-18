@@ -156,6 +156,10 @@ MITX_FEATURES = {
     # Toggle to enable chat availability (configured on a per-course
     # basis in Studio)
     'ENABLE_CHAT': False,
+    # Allow badges to be visible in courseware at /badges and beneath progress graph
+    'ENABLE_STUDENT_BADGE_DISPLAY_COURSEWARE': False,
+    # Allow badges to be visible at /badges_profile
+    'ENABLE_STUDENT_BADGE_DISPLAY_DASHBOARD': False,
 }
 
 # Used for A/B testing

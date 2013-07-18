@@ -1,0 +1,193 @@
+<%inherit file="/main.html" />
+<%namespace name='static' file='/static_content.html'/>
+
+<%block name="headextra">
+  <%static:css group='course'/>
+</%block>
+
+<%block name="title"><title>${course.number} Badges</title></%block>
+
+<%!
+    from django.core.urlresolvers import reverse
+%>
+
+<%! from xmodule.util.date_utils import get_default_time_display %>
+
+<%block name="js_extra">
+<script type="text/javascript" src="http://beta.openbadges.org/issuer.js"></script>
+</%block>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+
+  var start_info_button = function() {
+      $('#badge_info').hide();
+      $('#badge_info_button').attr('value', '▸ Learn more');
+  };
+  start_info_button();
+
+  $('input#badge_export').click(function() {
+    OpenBadges.issue(${badge_data['badge_urls']}, function(e,s) {});
+  });
+
+
+  var badge_info_visible = false;
+  var flip_info_button = function() {
+    if (badge_info_visible) {
+      $('#badge_info_button').attr('value', '▸ Learn more');
+      $('#badge_info').hide('blind');
+    }
+    else {
+      $('#badge_info_button').attr('value', '▾ Learn more');
+      $('#badge_info').show('blind');
+    }
+    badge_info_visible = !badge_info_visible;
+  };
+  $('#badge_info_button').click(flip_info_button);
+
+
+});
+
+</script>
+
+<style>
+img.unlockable {
+  filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale"); /* Firefox 10+, Firefox on Android */
+  filter: grayscale( 100% );
+  filter: gray;
+  -webkit-filter: grayscale( 100% );
+  -moz-filter: grayscale( 100% );
+  -o-filter: grayscale( 100% );
+  -ms-filter: grayscale( 100% );
+
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+#badge_export {
+  float: right;
+  width: 150px;
+  margin-left: 20px;
+  background-color: rgb(29,157,217);
+  color: white;
+  background: rgb(29,157,217);
+  text-shadow: 0pt 1px 0pt rgb(7, 103, 148);
+  border: 1px solid rgb(13, 114, 162);
+  box-shadow: 0pt 1px 0pt 0pt rgb(97, 184, 225) inset;
+}
+#badge_info_button {
+  float: right;
+  width: 150px;
+  margin-left: 20px;
+}
+img.badge_image {
+  float: left;
+  width: 100px;
+  margin-right: 20px;
+  border-radius: 3px;
+}
+</style>
+
+<%include file="/courseware/course_navigation.html" args="active_page='badges'" />
+
+<section class="container">
+  <div class="profile-wrapper">
+
+    <section class="course-info">
+      <header>
+        <h1>Badges for <i>${course.display_name}</i> (Prototype)</h1>
+      </header>
+      %if len(badge_data['unlockable_badgeclasses']) != 0 or len(badge_data['earned_badges']) != 0:
+        <input type="button" id="badge_info_button" value="" />
+        <p>
+          If you wish, you can export these badges to <a href="http://beta.openbadges.org/">Mozilla Backpack</a> to share them.
+        </p>
+        <br />
+        <div id="badge_info">
+        <hr />
+        <input type="button" id="badge_export" value="Export All" />
+        <p>
+        These badges are <a href="http://openbadges.org/">Mozilla Open Badges</a>, which means you can save them in <a href="http://beta.openbadges.org/">Mozilla Backpack</a>, a separate website which stores badges. You can display and share the badges elsewhere on the Internet, along with any badges you collect from other websites.
+        <ol>
+          <li><p>
+            You will be prompted to create a Mozilla Persona account. Make sure to use your <b>${student.email}</b> email address.
+          </p></li>
+          <li><p>
+            Visit <a href="http://beta.openbadges.org/">Mozilla Backpack</a> to view the exported badges.
+          </p></li>
+          <li><p>
+            Use Mozilla Backpack to sort your badges into collections which you can share on other websites.
+          </p></li>
+        </ol></p>
+        </div>
+      <ol class="chapters">
+        %if len(badge_data['earned_badges']) != 0:
+        <li>
+          <h2>Earned</h2>
+          <ol class="sections">
+            %for i in range(len(badge_data['earned_badges'])):
+              <%badge = badge_data['earned_badges'][i]%>
+              <%badgeclass = badge.get('badge', {})%>
+              <%num = badgeclass.get('number_awarded')%>
+              <li>
+                <table><tr>
+                  <td><img src="${badge.get('image')}" class="badge_image" /></td>
+                  <td>
+                    <h3>${badgeclass.get('name')}</h3>
+                    <p>
+                    <b>${badgeclass.get('description')} </b><br />
+                      awarded on <b>${badge.get('issuedOn')}</b> by
+                      <a href="${badgeclass.get('issuer', {}).get('origin')}">${badgeclass.get('issuer', {}).get('name')}</a><br />
+                      <i>
+                      %if num is not None:
+                          ${num-1} other${' has' if num-1 is 1 else 's have'} this badge.
+                      %endif
+                      </i>
+                    </p>
+                  </td>
+                </tr></table>
+              </li>
+              %if i != len(badge_data['earned_badges']) - 1:
+                <hr />
+              %endif
+            %endfor
+          </ol>
+        </li>
+        %endif
+        %if len(badge_data['unlockable_badgeclasses']) != 0:
+        <li>
+          <h2>Unlockable</h2>
+          <ol class="sections">
+            %for i in range(len(badge_data['unlockable_badgeclasses'])):
+              <%badgeclass = badge_data['unlockable_badgeclasses'][i]%>
+              <%num = badgeclass.get('number_awarded')%>
+              <li>
+                <table><tr>
+                  <td><img src="${badgeclass.get('image')}" class="unlockable badge_image" /></td>
+                  <td>
+                    <p>
+                    <b>${badgeclass.get('description')} </b><br />
+                    <i>
+                    %if num is not None:
+                        ${num} other${' has' if num is 1 else 's have'} this badge.
+                    %endif
+                    </i>
+                    </p>
+                  </td>
+                </tr></table>
+              </li>
+              %if i != len(badge_data['unlockable_badgeclasses']) - 1:
+                <hr />
+              %endif
+            %endfor
+          </ol>
+        </li>
+        %endif
+      </ol>
+      %else:
+       <p>This course does not offer badges.</p>
+      %endif
+
+    </section>
+  </div>
+</section>
