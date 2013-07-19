@@ -895,7 +895,7 @@ class NumericalResponse(LoncapaResponse):
         try:
             evaluator(dict(), dict(), answer)
             return True
-        except StudentInputError:
+        except (StudentInputError, UndefinedVariable):
             return False
 
     def get_answers(self):
