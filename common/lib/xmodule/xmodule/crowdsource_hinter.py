@@ -100,14 +100,15 @@ class CrowdsourceHinterModule(CrowdsourceHinterFields, XModule):
             self.answer_to_str = self.formula_answer_to_str
         else:
             self.answer_to_str = self.numerical_answer_to_str
-        # answer_compare is expected to return whether its two inputs are close enough
+        # compare_answer is expected to return whether its two inputs are close enough
         # to be equal, or raise a StudentInputError if one of the inputs is malformatted.
         try:
-            self.answer_compare = responder.answer_compare
+            self.compare_answer = responder.compare_answer
             self.validate_answer = responder.validate_answer
         except AttributeError:
             # This response type is not supported!
-            log.exception('Response type not supported for hinting: ' + str(responder))
+            self.init_error = 'Response type not supported for hinting: ' + str(responder)
+            log.exception(self.init_error)
 
     def get_html(self):
         """
@@ -167,7 +168,7 @@ class CrowdsourceHinterModule(CrowdsourceHinterFields, XModule):
         Look in self.hints, and find all answer keys that are "equal with tolerance"
         to the input answer.
         """
-        return [key for key in self.hints if self.answer_compare(key, answer)]
+        return [key for key in self.hints if self.compare_answer(key, answer)]
 
     def handle_ajax(self, dispatch, data):
         """
