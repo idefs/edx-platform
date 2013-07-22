@@ -986,12 +986,12 @@ class NumericalResponseTest(ResponseTest):
         input_dict = {'1_2_1': '1/0'}
         self.assertRaises(StudentInputError, problem.grade_answers, input_dict)
 
-    def test_answer_compare(self):
+    def test_compare_answer(self):
         """Tests the answer compare function."""
         problem = self.build_problem(answer="42")
         responder = problem.responders.values()[0]
-        self.assertTrue(responder.answer_compare('48', '8*6'))
-        self.assertFalse(responder.answer_compare('48', '9*5'))
+        self.assertTrue(responder.compare_answer('48', '8*6'))
+        self.assertFalse(responder.compare_answer('48', '9*5'))
 
     def test_validate_answer(self):
         """Tests the answer validation function."""
