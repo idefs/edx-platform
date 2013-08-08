@@ -335,7 +335,6 @@ def badges_profile(request):
                                           if has_access(request.user, course, 'load'))
     cert_statuses = {course.id: cert_info(request.user, course) for course in courses}
     exam_registrations = {course.id: exam_registration_info(request.user, course) for course in courses}
-    top_news = _get_news(top=3) if not settings.MITX_FEATURES.get('ENABLE_MKTG_SITE', False) else None
     external_auth_map = None
     try:
         external_auth_map = ExternalAuthMap.objects.get(user=user)
@@ -348,7 +347,6 @@ def badges_profile(request):
                'errored_courses': errored_courses,
                'show_courseware_links_for': show_courseware_links_for,
                'cert_statuses': cert_statuses,
-               'news': top_news,
                'exam_registrations': exam_registrations,
                }
 
