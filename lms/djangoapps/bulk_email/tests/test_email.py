@@ -2,13 +2,16 @@
 Unit tests for sending course email
 """
 
-from django.test.utils import override_settings
+from django.core import mail
 from django.core.urlresolvers import reverse
+from django.core.management import call_command
+from django.test.utils import override_settings
+
 from courseware.tests.tests import TEST_DATA_MONGO_MODULESTORE
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.modulestore.tests.factories import CourseFactory
 from student.tests.factories import UserFactory, GroupFactory, CourseEnrollmentFactory
-from django.core import mail
+
 from bulk_email.tasks import delegate_email_batches, course_email
 from bulk_email.models import CourseEmail
 
@@ -35,6 +38,9 @@ class TestEmail(ModuleStoreTestCase):
         self.students = [UserFactory() for _ in xrange(STUDENT_COUNT)]
         for student in self.students:
             CourseEnrollmentFactory.create(user=student, course_id=self.course.id)
+
+        # load initial content (since we don't run migrations as part of tests):
+        call_command("loaddata", "course_email_template.json")
 
         self.client.login(username=self.instructor.username, password="test")
 

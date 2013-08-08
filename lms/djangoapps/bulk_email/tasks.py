@@ -11,11 +11,13 @@ from django.contrib.auth.models import User, Group
 from django.core.mail import EmailMultiAlternatives, get_connection
 from django.http import Http404
 from celery import task, current_task
+from django.core.urlresolvers import reverse
 
-from bulk_email.models import CourseEmail, Optout
+from bulk_email.models import (
+    CourseEmail, Optout, CourseEmailTemplate
+)
 from courseware.access import _course_staff_group_name, _course_instructor_group_name
 from courseware.courses import get_course_by_id
-from mitxmako.shortcuts import render_to_string
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ def delegate_email_batches(hash_for_msg, recipient, course_id, course_url, user_
         raise Exception("get_course_by_id failed: " + exc.args[0])
 
     try:
-        email = CourseEmail.objects.get(hash=hash_for_msg)
+        _email = CourseEmail.objects.get(hash=hash_for_msg)
     except CourseEmail.DoesNotExist as exc:
         log.warning("Failed to get CourseEmail with hash %s, retry %d", hash_for_msg, current_task.request.retries)
         raise delegate_email_batches.retry(arg=[hash_for_msg, recipient, course_id, course_url, user_id], exc=exc)
@@ -81,6 +83,11 @@ def course_email(hash_for_msg, to_list, course_title, course_url, throttle=False
     being the only "to".  Emails are sent multipart, in both plain
     text and html.
     """
+    # TODO:  this is a separate task, so it may run on a separate worker process
+    # than the "delegate_email_batches" task that spawned it.  So we have to make
+    # sure that the email templates have been loaded.
+    course_email_template = CourseEmailTemplate.get_template()
+
     try:
         msg = CourseEmail.objects.get(hash=hash_for_msg)
     except CourseEmail.DoesNotExist as exc:
@@ -106,19 +113,33 @@ def course_email(hash_for_msg, to_list, course_title, course_url, throttle=False
 
         while to_list:
             (name, email) = to_list[-1].values()
-            html_footer = render_to_string('emails/email_footer.html',
-                                           {'name': name,
-                                            'email': email,
-                                            'course_title': course_title,
-                                            'course_url': course_url})
-            plain_footer = render_to_string('emails/email_footer.txt',
-                                            {'name': name,
-                                             'email': email,
-                                             'course_title': course_title,
-                                             'course_url': course_url})
+#             html_footer = render_to_string('emails/email_footer.html',
+#                                            {'name': name,
+#                                             'email': email,
+#                                             'course_title': course_title,
+#                                             'course_url': course_url})
+#             plain_footer = render_to_string('emails/email_footer.txt',
+#                                             {'name': name,
+#                                              'email': email,
+#                                              'course_title': course_title,
+#                                              'course_url': course_url})
+#             plaintext_msg = plaintext + plain_footer.encode('utf-8')
+#             html_msg = msg.html_message + html_footer.encode('utf-8')
+            context = {
+                'name': name,
+                'email': email,
+                'course_title': course_title,
+                'course_url': course_url,
+                'message_body': msg.html_message,
+                'account_settings_url': 'https://{}{}'.format(settings.SITE_NAME, reverse('dashboard')),
+                'platform_name': settings.PLATFORM_NAME,
+            }
 
-            email_msg = EmailMultiAlternatives(subject, plaintext + plain_footer.encode('utf-8'), from_addr, [email], connection=connection)
-            email_msg.attach_alternative(msg.html_message + html_footer.encode('utf-8'), 'text/html')
+            plaintext_msg = course_email_template.render_plaintext(plaintext, context)
+            html_msg = course_email_template.render_htmltext(msg.html_message, context)
+
+            email_msg = EmailMultiAlternatives(subject, plaintext_msg, from_addr, [email], connection=connection)
+            email_msg.attach_alternative(html_msg, 'text/html')
 
             if throttle or current_task.request.retries > 0:  # throttle if we tried a few times and got the rate limiter
                 time.sleep(0.2)
