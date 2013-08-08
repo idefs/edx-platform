@@ -8,7 +8,7 @@
 
 <%namespace name='static' file='static_content.html'/>
 
-<%block name="title"><title>Profile</title></%block>
+<%block name="title"><title>Badges Earned</title></%block>
 
 <%block name="js_extra">
   <script type="text/javascript" src="http://beta.openbadges.org/issuer.js"></script>
@@ -191,44 +191,11 @@
 
       </ul>
     </section>
-
-    ## `news` should be `None` whenever a non-edX theme is enabled:
-    ## see common/djangoapps/student/views.py#_get_news
-    %if news:
-    <article class="news-carousel">
-      <header>
-        <h4>edX News</h4>
-        <nav class="page-dots">
-          <ol>
-            <li><a href="#" class="page-dot current"></a></li>
-            <li><a href="#" class="page-dot"></a></li>
-            <li><a href="#" class="page-dot"></a></li>
-          </ol>
-        </nav>
-      </header>
-      <div class="pages">
-        % for entry in news:
-        <section class="page">
-          %if entry.image:
-          <div class="news-image">
-            <a href="${entry.link}"><img src="${entry.image}" /></a>
-          </div>
-          %endif
-          <h5><a href="${entry.link}">${entry.title}</a></h5>
-          <div class="excerpt">
-            %if entry.summary:
-            <p>${entry.summary}</p>
-            %endif
-            <p><a href="${entry.link}">Learn More ›</a></p>
-          </div>
-        </section>
-        %endfor
-      </div>
-    </article>
-    %endif
   </section>
 
   <section class="my-courses">
+
+    %if len(badge_data['earned_badges']) > 0:
     <header>
       <h2>All Badges (prototype)</h2>
     </header>
@@ -264,6 +231,9 @@
           </tr></table>
           <hr />
       %endfor
+    %else:
+      <p></p>
+    %endif
 
   </section>
 </section>
