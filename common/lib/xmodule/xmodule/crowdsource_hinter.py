@@ -168,7 +168,7 @@ class CrowdsourceHinterModule(CrowdsourceHinterFields, XModule):
             return '''This is a crowdsourced hinting module for {name}.  This message is only
                 visible in Studio - your students will see the actual hinting module.
                 <br /><br />
-                To add or moderate hints, visit {manager_url}'''.format(
+                To add or moderate hints, visit <a href="{manager_url}">{manager_url}</a>'''.format(
                     name=self.problem_module.display_name_with_default,
                     manager_url=manager_url,
                 )
