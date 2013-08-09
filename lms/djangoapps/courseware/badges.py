@@ -1,7 +1,13 @@
+"""
+Contains the function make_badge_data, responsible for getting badge data from the badge service.
+"""
+
 import json
 import os
 import urllib2
 import hashlib
+
+from django.conf import settings
 
 def make_badge_data(request, course=None):
     """
@@ -11,10 +17,7 @@ def make_badge_data(request, course=None):
         badge_urls -- a list of urls, each url has badge JSON, the urls are sent to Open Badging to export badges
     """
 
-    # TODO: Update this with the URL of the badge service once deployed.
-    badge_service_url = 'http://18.189.90.17:8002'
-
-    # Should use a recipient id that is a unique encryption of the student's email, not the email itself.
+    # Use a recipient id that is a unique encryption of the student's email, not the email itself.
     # This is important for preventing scraping of email addresses from badge service.
     email = request.user.email
     recipient_id = hashlib.sha256(email).hexdigest()
@@ -22,19 +25,41 @@ def make_badge_data(request, course=None):
     def read(url):
         """
         Reads the JSON object located at a URL. Returns the Python representation of the JSON object.
+
+        If the fetched JSON object is paginated -- with the next url at 'next' and the content at 'results' --
+        this reads through all of the pages, and compiles the results together into one list.
+
         Prints an error message if unsuccessful.
         """
         try:
             f = urllib2.urlopen(url)
-            return json.loads(f.read())
+            obj = json.loads(f.read())
+
+            results = obj.get('results', None)
+
+            if results is not None:
+                next_url = obj.get('next', None)
+
+                while next_url is not None:
+                    next_f = urllib2.urlopen(next_url)
+                    next_obj = json.loads(next_f)
+                    results.extend(next_obj.get('results', []))
+                    next_url = obj.get('next', None)
+
+                return results
+
+            else:
+                return obj
+
         except:
+            print "Badge service failing? URL not found -- %s" % str(url)
             return []
 
-    badges_url = os.path.join(badge_service_url, 'badges/.json?recipient_id=' + recipient_id)
+    badges_url = os.path.join(settings.BADGE_SERVICE_URL, 'badges/.json?recipient_id=' + recipient_id)
 
     if course is not None:
         suffix = "&course=" + course.id
-        unlockable_badgeclasses_url = os.path.join(badge_service_url, 'badgeclasses/?format=json' + suffix)
+        unlockable_badgeclasses_url = os.path.join(settings.BADGE_SERVICE_URL, 'badgeclasses/?format=json' + suffix)
 
         unlockable_badgeclasses = read(unlockable_badgeclasses_url)
 

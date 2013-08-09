@@ -309,50 +309,13 @@ def dashboard(request):
 
 @login_required
 def badges_profile(request):
-
-    # Most of the below is copied directly from the dashboard view.
-    # This page primarily exists as a prototype so that it's easier for someone to figure out how to make one later.
-    # Controlled by feature flag: ENABLE_STUDENT_BADGE_DISPLAY_DASHBOARD
-
-    user = request.user
-    enrollments = CourseEnrollment.objects.filter(user=user)
-    courses = []
-    for enrollment in enrollments:
-        try:
-            courses.append(course_from_id(enrollment.course_id))
-        except ItemNotFoundError:
-            log.error("User {0} enrolled in non-existent course {1}"
-                      .format(user.username, enrollment.course_id))
-    message = ""
-    if not user.is_active:
-        message = render_to_string('registration/activate_account_notice.html', {'email': user.email})
-    staff_access = False
-    errored_courses = {}
-    if has_access(user, 'global', 'staff'):
-        staff_access = True
-        errored_courses = modulestore().get_errored_courses()
-    show_courseware_links_for = frozenset(course.id for course in courses
-                                          if has_access(request.user, course, 'load'))
-    cert_statuses = {course.id: cert_info(request.user, course) for course in courses}
-    exam_registrations = {course.id: exam_registration_info(request.user, course) for course in courses}
-    external_auth_map = None
-    try:
-        external_auth_map = ExternalAuthMap.objects.get(user=user)
-    except ExternalAuthMap.DoesNotExist:
-        pass
-    context = {'courses': courses,
-               'message': message,
-               'external_auth_map': external_auth_map,
-               'staff_access': staff_access,
-               'errored_courses': errored_courses,
-               'show_courseware_links_for': show_courseware_links_for,
-               'cert_statuses': cert_statuses,
-               'exam_registrations': exam_registrations,
-               }
-
-    context.update({
+    """
+    This page primarily exists as a prototype so that it's easier for someone to figure out how to make one later.
+    Controlled by feature flag: ENABLE_STUDENT_BADGE_DISPLAY_DASHBOARD
+    """
+    context = {
         'badge_data': make_badge_data(request)
-    })
+    }
 
     return render_to_response('badges_profile.html', context)
 

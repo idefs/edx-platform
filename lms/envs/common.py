@@ -459,6 +459,10 @@ MOCK_STAFF_GRADING = False
 ################################# Jasmine ###################################
 JASMINE_TEST_DIRECTORY = PROJECT_ROOT + '/static/coffee'
 
+################################# Badge service ################################
+# Should update this with the URL of the badge service once deployed.
+BADGE_SERVICE_URL = 'http://18.111.94.77:8002/'
+
 ################################# Middleware ###################################
 # List of finder classes that know how to find static files in
 # various locations.
