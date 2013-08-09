@@ -771,6 +771,9 @@ INSTALLED_APPS = (
 
     # Notification preferences setting
     'notification_prefs',
+
+    # Unified storage interface (for S3)
+    'storages',
 )
 
 ######################### MARKETING SITE ###############################
