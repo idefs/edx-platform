@@ -2,51 +2,40 @@
 General methods and classes for interaction with the Mongo Database and Elasticsearch instance
 """
 
-import json
 import os
 import re
-import urllib
-import base64
 import hashlib
-import cStringIO
-import StringIO
 import logging
-import socket
+from itertools import chain
 
+import json
 import requests
 from requests.exceptions import RequestException
 from django.conf import settings
 from pymongo import MongoClient
-from pdfminer.pdfinterp import PDFResourceManager, process_pdf
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-from pdfminer.pdfparser import PDFSyntaxError
-from wand.image import Image
-from wand.exceptions import DelegateError, MissingDelegateError, CorruptImageError  # pylint: disable=E0611
-from xhtml2pdf import pisa as pisa
-from xhtml2pdf.w3c.cssParser import CSSParseError
 
 log = logging.getLogger("edx.search")
 MONGO_COURSE_CACHE = {}
 
 
-def flaky_request(method, url, **kwargs):
+def flaky_request(method, url, attempts=2, **kwargs):
     """
     General exception handling for requests
     """
-    request = getattr(requests, method)
-    response = None
-    attempts = kwargs.get("attempts", 2)
+
     for _ in range(attempts):
         try:
-            response = request(url, **kwargs)
-            break
+            return requests.request(method, url, **kwargs)
         except RequestException:
             pass
-    if response is None:
-        return None
-    else:
-        return response
+    raise EmptyFieldException
+
+
+class EmptyFieldException(Exception):
+    """
+    Basic Exception raised whenever a field that should be filled is returned empty
+    """
+    pass
 
 
 class ElasticDatabase:
@@ -90,7 +79,7 @@ class ElasticDatabase:
         with open(settings_file) as source:
             self.index_settings = json.load(source)
 
-    def index_data(self, index, data, type_=None, id_=None):
+    def index_data(self, index, data, type_, id_):
         """
         Actually indexes given data at the indicated type and id.
 
@@ -101,16 +90,6 @@ class ElasticDatabase:
         Data should be a dictionary that matches the mapping of the given type.
         """
 
-        if id_ is None:
-            try:
-                id_ = data["hash"]
-            except KeyError:
-                return None
-        if type_ is None:
-            try:
-                type_ = data["type_hash"]
-            except KeyError:
-                return None
         full_url = "/".join([self.url, index, type_, id_])
         return flaky_request("post", full_url, data=json.dumps(data))
 
@@ -128,14 +107,6 @@ class ElasticDatabase:
         url = self.url + "/_bulk"
         return flaky_request("post", url, data=all_data)
 
-    def delete_index(self, index):
-        """
-        Deletes the index specified, along with all contained types and data
-        """
-
-        full_url = "/".join([self.url, index])
-        return flaky_request("delete", full_url)
-
 
 class MongoIndexer:
     """
@@ -143,128 +114,50 @@ class MongoIndexer:
     """
 
     def __init__(
-        self, host, port, content_database='xcontent', file_collection="fs.files",
-        chunk_collection="fs.chunks", module_database='xmodule', module_collection='modulestore',
+        self, host, port, content_database='xcontent', module_database='xmodule',
+        edge_content_database='edge-xcontent', edge_module_database='edge-xmodule',
         es_instance=ElasticDatabase()
     ):
         self.host = host
         self.port = port
-        self.client = MongoClient(host, port)
-        self.content_db = self.client[content_database]
-        self.module_db = self.client[module_database]
-        self.file_collection = self.content_db[file_collection]
-        self.chunk_collection = self.content_db[chunk_collection]
-        self.module_collection = self.module_db[module_collection]
-        self.es_instance = es_instance
+        client = MongoClient(host, port)
+        content_db = client[content_database]
+        module_db = client[module_database]
+        edge_content_db = client[edge_content_database]
+        edge_module_db = client[edge_module_database]
+        self._chunk_collection = content_db["fs.chunks"]
+        self._module_collection = module_db["modulestore"]
+        self._edge_chunk_collection = edge_content_db["fs.chunks"]
+        self._edge_module_collection = edge_module_db["modulestore"]
+        self._es_instance = es_instance
 
-    def find_asset_with_name(self, name):
+    def _get_bulk_index_item(self, index, data):
         """
-        Returns a single asset whose filename exactly matches the one provided
-        """
-
-        return self.chunk_collection.find_one({"files_id.category": "asset", "files_id.name": name}, timeout=False)
-
-    def find_modules_for_course(self, course):
-        """
-        Returns a cursor matching all modules in the given course
+        Returns a string representing the next indexing action for bulk index
         """
 
-        return self.module_collection.find({"_id.course": course}, timeout=False)
+        return_string = ""
+        return_string += json.dumps({"index": {"_index": index, "_type": data["type_hash"], "_id": data["hash"]}})
+        log.debug(return_string)
+        return_string += "\n"
+        return_string += json.dumps(data)
+        return_string += "\n"
+        return return_string
 
-    def find_transcript_for_video_module(self, video_module):
+    def _get_course_name_from_mongo_module(self, mongo_module):
         """
-        Returns a transcript for a video given the module that contains it.
-
-        The video module should be passed in as an element from some mongo cursor.
+        Given a mongo_module, returns the name for the course element it belongs to
         """
+        course_element = self._module_collection.find_one({
+            "_id.course": mongo_module["_id"]["course"],
+            "_id.category": "course"
+        }) or self._edge_module_collection.find_one({
+            "_id.course": mongo_module["_id"]["course"],
+            "_id.category": "course"
+        })
+        return course_element["_id"]["name"]
 
-        data = video_module.get("definition", {"data": ""}).get("data", "")
-        if isinstance(data, dict):  # For some reason there are nested versions
-            data = data.get("data", "")
-        if isinstance(data, unicode) is False:  # for example videos
-            return [""]
-        uuid = self.uuid_from_video_module(video_module)
-        if uuid:
-            name_pattern = re.compile(".*?" + uuid + ".*?")
-        else:
-            return [""]
-        chunk = self.chunk_collection.find_one({"files_id.name": name_pattern})
-        if chunk is None:
-            return [""]
-        elif "com.apple.quar" in chunk["data"].decode('utf-8', "ignore"):
-            # This seemingly arbitrary error check brought to you by apple.
-            # This is an obscure, barely documented occurance where apple broke tarballs
-            # and decided to shove error messages into tar metadata which causes this.
-            # https://discussions.apple.com/thread/3145071?start=0&tstart=0
-            return [""]
-        else:
-            try:
-                return " ".join(filter(None, json.loads(chunk["data"].decode('utf-8', "ignore"))["text"]))
-            except ValueError:
-                log.error("Transcript for: " + uuid + " is invalid")
-                return chunk["data"].decode('utf-8', 'ignore')
-
-    def pdf_to_text(self, mongo_element):
-        """
-        Returns human-readable text from a given pdf.
-
-        The mongo element should be a member of fs.chunks, since this is expecting a binary
-        representation of the pdf.
-
-        It's worth noting that this method is relatively verbose, largely because mongo contains
-        a number of invalid or semi-valid pdfs.
-        """
-
-        only_ascii = lambda s: "".join(c for c in s if ord(c) < 128)
-        resource = PDFResourceManager()
-        return_string = cStringIO.StringIO()
-        params = LAParams()
-        converter = TextConverter(resource, return_string, codec='utf-8', laparams=params)
-        fake_file = StringIO.StringIO(mongo_element["data"].__str__())
-        try:
-            process_pdf(resource, converter, fake_file)
-        except PDFSyntaxError:
-            log.debug(mongo_element["files_id"]["name"] + " cannot be read, moving on.")
-            return ""
-        text_value = only_ascii(return_string.getvalue()).replace("\n", " ")
-        return text_value
-
-    def searchable_text_from_problem_data(self, mongo_element):
-        """
-        The data field from the problem is in weird xml, which is good for functionality, but bad for search
-        """
-
-        data = mongo_element["definition"]["data"]
-        paragraphs = " ".join([text for text in re.findall(r"<p>(.*?)</p>", data) if text is not "Explanation"])
-        paragraphs += " "
-        paragraphs += " ".join([text for text in re.findall(r"<text>(.*?)</text>", data)])
-        cleaned_text = re.sub(r"\\(.*?\\)", "", paragraphs).replace("\\", "")
-        remove_tags = re.sub(r"<[a-zA-Z0-9/\.\= \"\'_-]+>", "", cleaned_text)
-        remove_repetitions = re.sub(r"(.)\1{4,}", "", remove_tags)
-        return remove_repetitions
-
-    def thumbnail_from_video_module(self, video_module):
-        """
-        Return an appropriate binary thumbnail for a given video module
-        """
-
-        data = video_module.get("definition", {"data": ""}).get("data", "")
-        if "player.youku.com" in data:
-        # Some videos use the youku player, this is just the default youku icon
-        # Youku requires an api key to pull down relevant thumbnails, but
-        # if that is ever present this should be switched. Right now it only applies to two videos.
-            url = "https://lh6.ggpht.com/8_h5j6hiFXdSl5atSJDf8bJBy85b3IlzNWeRzOqRurfNVI_oiEG-dB3C0vHRclOG8A=w170"
-            image = urllib.urlopen(url)
-            return base64.b64encode(image.read())
-        uuid = self.uuid_from_video_module(video_module)
-        if uuid is False:
-            url = "http://img.youtube.com/vi/Tt9g2se1LcM/4.jpg"
-            image = urllib.urlopen(url)
-            return base64.b64encode(image.read())
-        image = urllib.urlopen("http://img.youtube.com/vi/" + uuid + "/0.jpg")
-        return base64.b64encode(image.read())
-
-    def uuid_from_video_module(self, video_module):
+    def _get_uuid_from_video_module(self, video_module):
         """
         Returns the youtube uuid given a video module.
 
@@ -277,55 +170,138 @@ class MongoIndexer:
         <video youtube=\"0.75:-gKKUBQ2NWA,1.0:dJvsFg10JY,1.25:lm3IKbRE2VA,1.50:Pz0XiZ8wO9o\">
         """
 
-        data = video_module.get("definition", {"data": ""}).get("data", "")
+        data = video_module.get("definition", {}).get("data", "")
         if isinstance(data, dict):
             data = data.get("data", "")
         uuids = data.split(",")
+        # Videos with a single speed still include commas. If a speed is completely lacking
+        # uuids will only be of length 1, but that seems to be the only case.
         if len(uuids) == 1:  # Some videos are just left over demos without links
-            return False
+            raise EmptyFieldException
         # The colon is kind of a hack to make sure there will always be a second element since
-        # some entries don't have anything for the second entry
+        # some entries don't have a second entry
+        # Example: <video youtube="1.0:uuid,1.50, someother_metadata"/>
         speed_map = {(entry + ":").split(":")[0]: (entry + ":").split(":")[1] for entry in uuids}
         uuid = [value for key, value in speed_map.items() if "1.0" in key][0]
         return uuid
 
-    def thumbnail_from_pdf(self, pdf):
+    def _get_thumbnail_from_video_module(self, video_module):
         """
-        Converts a pdf to a jpg. Currently just takes the first page.
+        Return an appropriate binary thumbnail for a given video module
         """
 
-        try:
-            with Image(blob=pdf) as img:
-                return base64.b64encode(img.make_blob('jpg'))
-        except (DelegateError, MissingDelegateError, CorruptImageError):
-            raise
+        data = video_module.get("definition", {}).get("data", "")
+        if "player.youku.com" in data:
+        # Some videos use the youku player, this is just the default youku icon
+        # Youku requires an api key to pull down relevant thumbnails, but
+        # if that is ever present this should be switched. Right now it only applies to two videos.
+            return "https://lh6.ggpht.com/8_h5j6hiFXdSl5atSJDf8bJBy85b3IlzNWeRzOqRurfNVI_oiEG-dB3C0vHRclOG8A=w170"
+        else:
+            try:
+                uuid = self._get_uuid_from_video_module(video_module)
+                return "http://img.youtube.com/vi/%s/0.jpg" % uuid
+            except EmptyFieldException:
+                return "http://img.youtube.com"
 
-    def thumbnail_from_html(self, html):
+    def _get_thumbnail_from_html(self, html):
         """
-        Returns a binary thumbnail for a given html string.
+        extracts the first image from the problem if there is an image present
 
-        Right now the most straightforward way I could find of doing this was by converting
-        this html to a pdf and then returning a jpg of that pdf.
+        Otherwise there will be no thumbnail for the problem
         """
-        pseudo_dest = cStringIO.StringIO()
-        try:
-            pisa.CreatePDF(StringIO.StringIO(html), pseudo_dest)
-        except (CSSParseError, socket.error, IOError):
-            # xhtml2pdf relies on w3c to do some parsing, which results in some errors simply timing out
+        img_src_pattern = r"(<img)(.*?)(src=\")([^\s]+?)\"\s?(.*?)(/?>)"
+        first_image = re.search(img_src_pattern, html, re.DOTALL)
+        if first_image is not None:
+            tag = first_image.group()
+            return re.sub(img_src_pattern, r"\4", tag, re.DOTALL)
+        else:
             return ""
-        return self.thumbnail_from_pdf(pseudo_dest.getvalue())
 
-    def course_name_from_mongo_module(self, mongo_module):
+    def _get_searchable_text_from_problem_data(self, mongo_element):
         """
-        Given a mongo_module, returns the name for the course element it belongs to
-        """
-        course_element = self.module_collection.find_one({
-            "_id.course": mongo_module["_id"]["course"],
-            "_id.category": "course"
-        })
-        return course_element["_id"]["name"]
+        Returns some fasimile of searchable text from a mongo problem element
 
-    def basic_dict(self, mongo_module, type_):
+        The data field from the problem is in weird xml, which is good for functionality, but bad for search
+        """
+
+        data = mongo_element["definition"]["data"]
+        # Grabs all text in paragraph tags. Explanation is a header that appears a lot, so it's thrown out.
+        paragraphs = " ".join([text for text in re.findall(r"<p>(.*?)</p>", data) if text is not "Explanation"])
+        paragraphs += " "
+        # Grabs all text between text tags, which is the most common container after paragraph tags.
+        paragraphs += " ".join([text for text in re.findall(r"<text>(.*?)</text>", data)])
+        # This gets rid of things like latex strings and other non-human readable escaped passages
+        cleaned_text = re.sub(r"\\(.*?\\)", "", paragraphs).replace("\\", "")
+        # Removes all lingering tags
+        remove_tags = re.sub(r"<[a-zA-Z0-9/\.\= \"\'_-]+>", "", cleaned_text)
+        # Problems sometimes include large swaths of repeated text, this regex will just remove
+        # long strings of identical repeated text
+        remove_repetitions = re.sub(r"(.)\1{10,}", "", remove_tags)
+        return remove_repetitions
+
+    def _find_transcript_for_video_module(self, video_module):
+        """
+        Returns a transcript for a video given the module that contains it.
+
+        The video module should be passed in as an element from some mongo cursor.
+        """
+
+        data = video_module.get("definition", {}).get("data", "")
+        if isinstance(data, dict):  # For some reason there are nested versions
+            data = data.get("data", "")
+        if isinstance(data, unicode) is False:  # for example videos
+            raise EmptyFieldException
+        uuid = self._get_uuid_from_video_module(video_module)
+        if uuid:
+            name_pattern = re.compile(".*" + uuid + ".*")
+        else:
+            raise EmptyFieldException
+        chunk = (self._chunk_collection.find_one({"files_id.name": name_pattern}) or
+            self._edge_chunk_collection.find_one({"files_id.name": name_pattern}))
+        if chunk is None:
+            raise EmptyFieldException
+        else:
+            try:
+                chunk_data = chunk["data"].decode('utf-8')
+                if "com.apple.quar" in chunk_data:
+                    # This seemingly arbitrary error check brought to you by apple.
+                    # This is an obscure, barely documented occurance where apple broke tarballs
+                    # and decided to shove error messages into tar metadata which causes this.
+                    # https://discussions.apple.com/thread/3145071?start=0&tstart=0
+                    raise EmptyFieldException
+                else:
+                    try:
+                        return " ".join(filter(None, json.loads(chunk_data)["text"]))
+                    except ValueError:
+                        log.error("Transcript for: " + uuid + " is invalid")
+                        return chunk_data
+            except UnicodeError:
+                raise EmptyFieldException
+
+    def _get_searchable_text(self, mongo_module, type_):
+        """
+        Returns searchable text for a module. Defined for a module only
+        """
+
+        if type_.lower() == "problem":
+            return self._get_searchable_text_from_problem_data(mongo_module)
+        elif type_.lower() == "transcript":
+            return self._find_transcript_for_video_module(mongo_module)
+
+    def _get_thumbnail(self, mongo_module, type_):
+        """
+        General interface for getting an appropriate thumbnail for a given mongo module
+
+        Currently the only types of modules supported are problems, and transcripts
+        """
+
+        if type_.lower() == "problem":
+            thumbnail = self._get_thumbnail_from_html(mongo_module["definition"]["data"])
+        elif type_.lower() == "transcript":
+            thumbnail = self._get_thumbnail_from_video_module(mongo_module)
+        return thumbnail
+
+    def _get_full_dict(self, mongo_module, type_):
         """
         Returns the part of the es schema that is the same for every object.
         """
@@ -333,23 +309,23 @@ class MongoIndexer:
         id_ = json.dumps(mongo_module["_id"])
         org = mongo_module["_id"]["org"]
         course = mongo_module["_id"]["course"]
-
         if not MONGO_COURSE_CACHE.get(course, False):
-            MONGO_COURSE_CACHE[course] = self.course_name_from_mongo_module(mongo_module)
-        offering = MONGO_COURSE_CACHE[course]
+            MONGO_COURSE_CACHE[course] = self._get_course_name_from_mongo_module(mongo_module)
+        run = MONGO_COURSE_CACHE[course]
 
-        course_id = "/".join([org, course, offering])
-        hash_ = hashlib.sha1(id_).hexdigest()
+        course_id = "/".join([org, course, run])
+        log.debug(course_id)
+        item_hash = hashlib.sha1(id_).hexdigest()
         display_name = (
-            mongo_module.get("metadata", {"display_name": ""}).get("display_name", "") +
+            mongo_module.get("metadata", {}).get("display_name", "") +
             " (" + mongo_module["_id"]["course"] + ")"
         )
-        searchable_text = self.get_searchable_text(mongo_module, type_)
-        thumbnail = self.get_thumbnail(mongo_module, type_)
+        searchable_text = self._get_searchable_text(mongo_module, type_)
+        thumbnail = self._get_thumbnail(mongo_module, type_)
         type_hash = hashlib.sha1(course_id).hexdigest()
         return {
             "id": id_,
-            "hash": hash_,
+            "hash": item_hash,
             "display_name": display_name,
             "course_id": course_id,
             "searchable_text": searchable_text,
@@ -357,81 +333,42 @@ class MongoIndexer:
             "type_hash": type_hash
         }
 
-    def get_searchable_text(self, mongo_module, type_):
+    def _find_modules_for_course(self, course):
         """
-        Returns searchable text for a module. Defined for a module only
-        """
-
-        if type_.lower() == "pdf":
-            name = re.sub(r'(.*?)(/asset/)(.*?)(\.pdf)(.*?)$', r'\3' + ".pdf", mongo_module["definition"]["data"])
-            asset = self.find_asset_with_name(name)
-            if not asset:
-                searchable_text = ""
-            else:
-                searchable_text = self.pdf_to_text(asset)
-        elif type_.lower() == "problem":
-            searchable_text = self.searchable_text_from_problem_data(mongo_module)
-        elif type_.lower() == "transcript":
-            searchable_text = self.find_transcript_for_video_module(mongo_module)
-        return searchable_text
-
-    def get_thumbnail(self, mongo_module, type_):
-        """
-        General interface for getting an appropriate thumbnail for a given mongo module
-
-        Currently the only types of modules supported ar pdfs, problems, and transcripts
-        """
-        if type_.lower() == "pdf":
-            try:
-                name = re.sub(r'(.*?)(/asset/)(.*?)(\.pdf)(.*?)$', r'\3' + ".pdf", mongo_module["definition"]["data"])
-                asset = self.find_asset_with_name(name)
-                if asset is None:
-                    raise DelegateError
-                thumbnail = self.thumbnail_from_pdf(asset.get("data", "").__str__())
-            except (DelegateError, MissingDelegateError, CorruptImageError):
-                thumbnail = ""
-        elif type_.lower() == "problem":
-            thumbnail = self.thumbnail_from_html(mongo_module["definition"]["data"])
-        elif type_.lower() == "transcript":
-            thumbnail = self.thumbnail_from_video_module(mongo_module)
-        return thumbnail
-
-    def bulk_index_item(self, index, data):
-        """
-        Returns a string representing the next indexing action for bulk index
+        Returns a cursor matching all modules in the given course
         """
 
-        return_string = ""
-        return_string += json.dumps({"index": {"_index": index, "_type": data["type_hash"], "_id": data["hash"]}})
-        return_string += "\n"
-        return_string += json.dumps(data)
-        return_string += "\n"
-        return return_string
+        main_cursor = self._module_collection.find({"_id.course": course}, timeout=False)
+        edge_cursor = self._edge_module_collection.find({"_id.course": course}, timeout=False)
+        return (entry for entry in chain(main_cursor, edge_cursor))
 
-    def index_course(self, course):
+    def index_course(self, course, chunk_size=10):
         """
         Indexes all of the searchable content for a course
         """
-        cursor = self.find_modules_for_course(course)
-        for _ in range(cursor.count()):
-            item = cursor.next()
+
+        cursor = self._find_modules_for_course(course)
+        counter = 0
+        index_string = ""
+        for item in cursor:
+            counter += 1
             category = item["_id"]["category"].lower().strip()
             data = {}
             index = ""
-            if category == "video":
-                data = self.basic_dict(item, "transcript")
-                index = "transcript-index"
-            elif category == "problem":
-                data = self.basic_dict(item, "problem")
-                index = "problem-index"
-            elif category == "html":
-                pattern = re.compile(r".*?/asset/.*?\.pdf.*?")
-                if pattern.match(item["definition"]["data"]):
-                    data = self.basic_dict(item, "pdf")
+            try:
+                if category == "video":
+                    data = self._get_full_dict(item, "transcript")
+                    index = "transcript-index"
+                elif category == "problem":
+                    data = self._get_full_dict(item, "problem")
+                    index = "problem-index"
                 else:
-                    data = {"test": ""}
-                index = "pdf-index"
-            else:
+                    continue
+            except EmptyFieldException:
                 continue
-            if filter(None, data.values()) == data.values():
-                return self.es_instance.index_data(index, data, data["hash"], data["type_hash"]).content
+            index_string += self._get_bulk_index_item(index, data)
+            if counter % chunk_size and counter > 1:
+                index_status_code = self._es_instance.bulk_index(index_string).status_code
+                if index_status_code == 400:
+                    log.error("The following bulk index failed: %s" % index_string)
+                index_string = ""

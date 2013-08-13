@@ -63,6 +63,6 @@ class ModelTest(TestCase):
         hits = [dummy_entry(score) for score in scores]
         full_return = FakeResponse({"hits": {"hits": hits}})
         results = SearchResults(full_return, s="fake query", sort="relevance")
-        results.filter_and_sort()
+        results.sort_results()
         scores = [entry.score for entry in results.entries]
         self.assertEqual([123.2, 5.2, 2.0, 1.0], scores)

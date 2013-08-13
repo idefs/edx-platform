@@ -4,13 +4,13 @@ Models for representation of search results
 
 import json
 import string
-import re
-from collections import Counter
+import logging
 
 import search.sorting
 from xmodule.modulestore import Location
 
 import nltk
+log = logging.getLogger("edx.search")
 
 
 class SearchResults:
@@ -25,9 +25,8 @@ class SearchResults:
         """kwargs should be the GET parameters from the original search request
         filters needs to be a dictionary that maps fields to allowed values"""
         raw_results = json.loads(response.content).get("hits", {"hits": ""})["hits"]
-        print raw_results
         scores = [entry["_score"] for entry in raw_results]
-        self.sort = kwargs.get("sort", None)
+        self.sort = kwargs.get("sort", "relevance")
         raw_data = [entry["_source"] for entry in raw_results]
         self.query = " ".join(kwargs.get("s", "*.*"))
         results = zip(raw_data, scores)
@@ -43,36 +42,17 @@ class SearchResults:
 
         self.entries = search.sorting.sort(self.entries, self.sort)
 
-    def get_counter(self, field):
+    def get_category(self, category="all"):
         """
-        Returns a Counter (histogram) for the field indicated
+        Returns a subset of all results that match the given category
+
+        If you pass in an empty category the default is to return everything
         """
 
-        master_list = [entry.data[field].lower() for entry in self.entries]
-        return Counter(master_list)
-
-    def filter(self, field, value):
-        """
-        Returns a set of all entries where the value of the specified field matches the specified value
-        """
-
-        if value is None:
-            value = ""
-        punc = re.compile('[%s]' % re.escape(string.punctuation))
-        strip_punc = lambda s: punc.sub("", s).lower()
-        to_filter = lambda value, entry, field: strip_punc(value) in strip_punc(entry.data.get(field, ""))
-        return set(entry for entry in self.entries if to_filter(value, entry, field))
-
-    def filter_and_sort(self):
-        """
-        Applies all relevant filters and sorts to the internal entries container
-        """
-
-        full_results = set()
-        for field, value in self.filters.items():
-            full_results |= self.filter(field, value)
-        self.entries = list(full_results)
-        self.sort_results()
+        if category == "all" or category is None:
+            return self.entries
+        else:
+            return [entry for entry in self.entries if entry.category == category]
 
 
 class SearchResult:
@@ -82,10 +62,30 @@ class SearchResult:
 
     def __init__(self, entry, score, query):
         self.data = entry
+        self.category = json.loads(entry["id"])["category"]
         self.url = _return_jump_to_url(entry)
         self.score = score
-        self.thumbnail = "data:image/jpg;base64," + entry["thumbnail"]
+        if entry["thumbnail"].startswith("/static/"):
+            self.thumbnail = _get_content_url(self.data, entry["thumbnail"])
+        else:
+            self.thumbnail = entry["thumbnail"]
         self.snippets = _snippet_generator(self.data["searchable_text"], query)
+
+
+def _get_content_url(data, static_url):
+    """
+    Generates a real content url for problems specified with static urls
+
+    Nobody seems to know how this works, but this hack works for everything I can find.
+    """
+
+    base_url = "/c4x/%s/%s/asset" % (json.loads(data["id"])["org"], json.loads(data["id"])["course"])
+    addendum = static_url.replace("/static/", "")
+    addendum.replace("/", "_")
+    current = "/".join([base_url, addendum])
+    substring = current[current.find("images/"):].replace("/", "_")
+    substring = current[:current.find("images/")] + substring
+    return substring
 
 
 def _snippet_generator(transcript, query, soft_max=50, word_margin=25, bold=True):

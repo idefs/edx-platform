@@ -125,7 +125,7 @@ class ViewTest(TestCase):
 
     def test_basic_view(self):
         fake_request = namedtuple("Request", "GET")
-        response = views._find(fake_request({}), "test-course", self.url)
+        response = views._find(fake_request({}), "org/test-course/run", 1, self.url)
         self.assertFalse(response["results"])
         self.assertEqual(response["old_query"], "*.*")
         self.assertTrue(isinstance(response['data'], SearchResults))

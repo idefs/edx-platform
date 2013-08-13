@@ -2,15 +2,15 @@
 Test suite for the MongoIndexer class in es_requests
 """
 
-from search.es_requests import MongoIndexer
+from StringIO import StringIO
+
+import json
 from django.test import TestCase
 from pymongo import MongoClient
 from pyfuzz.generator import random_item, random_ascii, random_regex
-import json
-from StringIO import StringIO
 import ho.pisa as pisa
-import urllib
-import base64
+
+from search.es_requests import MongoIndexer, EmptyFieldException
 
 
 def dummy_document(key, values, data_type, **kwargs):
@@ -47,17 +47,10 @@ class MongoTest(TestCase):
         self.module_collection.insert(dummy)
         self.indexer = MongoIndexer(self.host, self.port, content_database="test-content", module_database="test-module")
 
-    def test_find_asset_name(self):
-        file_id = dummy_document("files_id", ["name", "test_field"], "ascii", length=20)
-        file_id["files_id"].update({"category": "asset"})
-        self.chunk_collection.insert(file_id)
-        cursor = self.indexer.find_asset_with_name(file_id["files_id"]["name"])
-        self.assertEquals(cursor["files_id"], file_id["files_id"])
-
     def test_find_module_for_course(self):
         id_ = dummy_document("_id", ["tag", "org", "course", "category", "name"], "ascii", length=20)
         self.module_collection.insert(id_)
-        cursor = self.indexer.find_modules_for_course(id_["_id"]["course"])
+        cursor = self.indexer._find_modules_for_course(id_["_id"]["course"])
         self.assertEquals(cursor.next()["_id"], id_["_id"])
 
     def test_find_module_transcript(self):
@@ -67,60 +60,52 @@ class MongoTest(TestCase):
         test_transcript = {"text": random_ascii(length=50)}
         test_document = {"files_id": {"name": "dJvsFg10JY"}, "data": json.dumps(test_transcript)}
         self.chunk_collection.insert(test_document)
-        transcript = self.indexer.find_transcript_for_video_module(video_module).encode("utf-8", "ignore")
+        transcript = self.indexer._find_transcript_for_video_module(video_module).encode("utf-8", "ignore")
         self.assertEquals(transcript.replace(" ", ""), test_transcript["text"].replace(" ", ""))
 
         test_bad_transcript = {"definition": {"data": 10}}
-        self.assertEquals(self.indexer.find_transcript_for_video_module(test_bad_transcript), [""])
-
-    def test_pdf_to_text(self):
-        pseudo_file = StringIO()
-        pisa.CreatePDF("This is a test", pseudo_file)
-        test = {"data": pseudo_file.getvalue()}
-        test.update({"files_id": {"name": "testPdf"}})
-        value = self.indexer.pdf_to_text(test)
-        self.assertEquals(value.strip(), "This is a test")
-
-        bad_test = {"data": "fake", "files_id": {"name": "testCase"}}
-        self.assertEquals(self.indexer.pdf_to_text(bad_test), "")
+        success = False
+        try:
+            self.indexer._find_transcript_for_video_module(test_bad_transcript), [""]
+        except EmptyFieldException:
+            success = True
+        self.assertTrue(success)
 
     def test_problem_text(self):
         test_text = "<p>This is a test</p><text>and so is <a href='test.com'></a>this</text>"
         document = {"definition": {"data": test_text}}
-        check = self.indexer.searchable_text_from_problem_data(document)
+        check = self.indexer._get_searchable_text_from_problem_data(document)
         self.assertEquals(check, "This is a test and so is this")
 
         bad_document = {"definition": {"data": "@#@%^%#$afsdkjjl@#!$%"}}
-        bad_check = self.indexer.searchable_text_from_problem_data(bad_document)
+        bad_check = self.indexer._get_searchable_text_from_problem_data(bad_document)
         self.assertEquals(bad_check, " ")
 
     def test_youku_video(self):
         document = {"definition": {"data": "player.youku.com"}}
-        image = self.indexer.thumbnail_from_video_module(document)
+        image = self.indexer._get_thumbnail_from_video_module(document)
         url = "https://lh6.ggpht.com/8_h5j6hiFXdSl5atSJDf8bJBy85b3IlzNWeRzOqRurfNVI_oiEG-dB3C0vHRclOG8A=w170"
-        test_image = urllib.urlopen(url)
-        self.assertEquals(image, base64.b64encode(test_image.read()))
+        self.assertEquals(image, url)
 
     def test_bad_video(self):
         document = {"definition": {"data": "blank"}}
-        image = self.indexer.thumbnail_from_video_module(document)
-        url = "http://img.youtube.com/vi/Tt9g2se1LcM/4.jpg"
-        test_image = urllib.urlopen(url)
-        self.assertEquals(image, base64.b64encode(test_image.read()))
+        image = self.indexer._get_thumbnail_from_video_module(document)
+        url = "http://img.youtube.com"
+        self.assertEquals(image, url)
 
     def test_good_thumbnail(self):
         test_string = '<video youtube=\"0.75:-gKKUBQ2NWA,1.0:dJvsFg10JY,1.25:lm3IKbRE2VA,1.50:Pz0XiZ8wO9o\">'
         document = {"definition": {"data": test_string}}
-        image = self.indexer.thumbnail_from_video_module(document)
-        test_image = urllib.urlopen("http://img.youtube.com/vi/dJvsFg10JY/0.jpg")
-        self.assertEquals(base64.b64encode(test_image.read()), image)
+        image = self.indexer._get_thumbnail_from_video_module(document)
+        url = "http://img.youtube.com/vi/dJvsFg10JY/0.jpg"
+        self.assertEquals(url, image)
 
     def test_pdf_thumbnail(self):
         bad_pseduo_file = StringIO()
         bad_pdf = random_item("bytes", length=200)
         bad_pseduo_file.write(bad_pdf)
         try:
-            self.indexer.thumbnail_from_pdf({"data": bad_pseduo_file.getvalue()})
+            self.indexer._get_thumbnail_from_pdf({"data": bad_pseduo_file.getvalue()})
         except:
             success = False
         self.assertFalse(success)
@@ -128,7 +113,7 @@ class MongoTest(TestCase):
     def test_html_thumbnail(self):
         success = True
         try:
-            self.indexer.thumbnail_from_html("<p>Test</p>")
+            self.indexer._get_thumbnail_from_html("<p>Test</p>")
         except:
             success = False
         self.assertTrue(success)
@@ -136,7 +121,7 @@ class MongoTest(TestCase):
     def test_get_searchable_text(self):
         problem_test_text = "<p>This is a test</p><text>and so is <a href='test.com'></a>this</text>"
         problem_document = {"definition": {"data": problem_test_text}}
-        problem_test = self.indexer.get_searchable_text(problem_document, "problem")
+        problem_test = self.indexer._get_searchable_text(problem_document, "problem")
         self.assertEquals(problem_test, "This is a test and so is this")
 
         video_module = dummy_document("definition", ["data"], "ascii", length=200)
@@ -145,25 +130,12 @@ class MongoTest(TestCase):
         test_transcript = {"text": random_ascii(length=50)}
         test_document = {"files_id": {"name": "dJvsFg10JY"}, "data": json.dumps(test_transcript)}
         self.chunk_collection.insert(test_document)
-        transcript = self.indexer.get_searchable_text(video_module, "transcript").encode("utf-8", "ignore")
+        transcript = self.indexer._get_searchable_text(video_module, "transcript").encode("utf-8", "ignore")
         self.assertEquals(transcript.replace(" ", ""), test_transcript["text"].replace(" ", ""))
-
-    def test_basic_dict(self):
-        document = dummy_document("_id", ["org", "course"], "regex", regex="[a-zA-Z0-9]", length=50)
-        asset_string = "/asset/" + random_item("regex", regex="[a-zA-Z0-9]", length=50) + ".pdf"
-        document.update({"definition": {"data": asset_string}})
-        document.update({"metadata": {"display_name": random_regex(regex="[a-zA-Z0-9]", length=50)}})
-        course_document = {"_id": {"category": "course", "course": document["_id"]["course"], "name": "test_course"}}
-        self.module_collection.insert(course_document)
-        basic_dictionary = self.indexer.basic_dict(document, "pdf")
-        self.assertTrue(document["metadata"]["display_name"] in basic_dictionary["display_name"])
-        self.assertTrue(document["_id"]["course"] in basic_dictionary["display_name"])
-        self.assertTrue(basic_dictionary["searchable_text"] == "")
-        self.assertTrue(basic_dictionary["thumbnail"] == "")
 
     def test_bulk_index_item(self):
         data = {"type_hash": "test type hash", "hash": "test hash"}
-        bulk_index = self.indexer.bulk_index_item("test-index", data)
+        bulk_index = self.indexer._get_bulk_index_item("test-index", data)
         action = json.loads(bulk_index.split("\n")[0])
         self.assertEquals(action["index"]["_index"], "test-index")
         self.assertEquals(action["index"]["_type"], "test type hash")
@@ -176,10 +148,7 @@ class MongoTest(TestCase):
         self.module_collection.insert(document)
         course_document = {"_id": {"category": "course", "course": document["_id"]["course"], "name": "test_course"}}
         self.module_collection.insert(course_document)
-        check = self.indexer.index_course("test-course")
-        return_dict = json.loads(check)
-        self.assertEquals(return_dict["ok"], True)
-        self.assertEquals(return_dict["_index"], "problem-index")
+        self.indexer.index_course("test-course")
 
     def test_index_course_pdf(self):
         document = dummy_document("_id", ["org"], "regex", regex="[a-zA-Z0-9]", length=50)

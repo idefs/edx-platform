@@ -11,65 +11,70 @@
         var old_query = "${ old_query }";
     </script>
     <%namespace name='static' file='/static_content.html'/>
+    <link href="${static.url('css/vendor/paginate.css')}" rel="stylesheet" type="text/css"></link>
+    <script type="text/javascript" src="${static.url('js/vendor/jquery.paginate.js')}"></script>
     <script type="text/javascript" src="${static.url('js/search.js')}"></script>
     <link href="${static.url('css/search.css')}" rel="stylesheet" type="text/css"></link>
 </head>
 
 <div class="container">
-    % if spelling_correction:
-    <div class="correction_div">
-    	<p class="search_correction">
-    		<span>Did you mean </span>
-    		<a onclick="correctionLink(event, '${spelling_correction}')">${spelling_correction}</a>
-    		<span>?</span>
-    	</p>
-    </div>
-    % endif
     <div class="search-results">
         <div id="menu-container">
             <ul class="menu">
-            <li class="header-bar">
+            <li id="all" class="header-bar">
                 <span class="filter-item"></span>
                 Courseware
                 <span class="count">${ len(data.entries) }</span>
                 </span>
             </li>
-            <li class="body-bar">
+            <li id="video" class="body-bar">
                 <span class="filter-item">
                 <span class="video-image"></span>
                 Transcripts
-                <div class="count"
+                <span class="count">${ len(data.get_category("video"))}</span>
                 </span>
             </li>
-            <li class="body-bar">
+            <li id="problem" class="body-bar">
                 <span class="filter-item">
                 <span class="problem-image"></span>
                 Problems
-                </span>
-            </li>
-            <li class="body-bar">
-                <span class="filter-item">
-                <span class="pdf-image"></span>
-                PDFs
+                <span class="count">${ len(data.get_category("problem"))}</span>
                 </span>
             </li>
             </ul>
         </div>
-        <div class="search-container">
         % if len(data.entries) > 0:
-        	% for datum in data.entries:
-            <section class="highlighter">
+            <div class="search-container">
+                <p class="search-context">
+                    Showing ${len(data.entries)} results in courseware for ${course_id}
+                </p>
+                <p class="pagination-stub" style="text-align:center;"></p>
+        	% for datum in data.get_category(filter)[result_start:result_end]:
+            <section>
             	<a href=${datum.url}>
             		<div class="result-container">
             			<div class="result-header">
+                        % if datum.category == "video":
+                            <span class="video-image"></span>
+                        % elif datum.category == "problem":
+                            <span class="problem-image"></span>
+                        % endif 
             				<h1 class="result-title">${datum.data['display_name']}</h1>
                         </div>
             			<div class="result-body">
-                            <div class="thumbnail-wrapper">
-            				    <div class="result-thumbnail">
-            					   <img class="thumbnail" src="${datum.thumbnail}" alt="${datum.data['display_name']}"></img>
-            				    </div>
-                            </div>
+                                <div class="thumbnail-wrapper">
+                				    <div class="result-thumbnail">
+                                    % if datum.thumbnail:
+                                        % if datum.category == "problem":
+                                            <img class="thumbnail" src='${static.url(datum.thumbnail)}' alt="${datum.data['display_name']}">
+                                        % else: 
+                    					   <img class="thumbnail" src="${datum.thumbnail}" alt="${datum.data['display_name']}">
+                                        % endif
+                                    % else:
+                                        <img class="thumbnail">
+                                    % endif
+                				    </div>
+                                </div>
                             <div class="result-snippets">
             					<div class="snippet">
             						${datum.snippets}
@@ -80,10 +85,10 @@
             	</a>
             </section>
         	% endfor
-        % else:
-            <h1 class="result-title no-results">"No results found, please try again"</h1>
-        % endif
         </div>
+        % else:
+            <h1 class="result-title no-results">No results found, please try again</h1>
+        % endif
     </div>
 </div>
 

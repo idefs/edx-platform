@@ -51,14 +51,16 @@
 
 .video-image:before{
     content: url("/static/images/sequence-nav/video-icon-current.png");
+    float:left;
+    padding-left: 10px;
+    padding-right: 5px;
 }
 
 .problem-image:before{
-    content: url("/static/images/sequence-nav/list-icon-normal.png")
-}
-
-.pdf-image:before{
-    content: url("/static/images/sequence-nav/document-icon-current.png");
+    content: url("/static/images/sequence-nav/list-icon-normal.png");
+    float:left;
+    padding-left: 10px;
+    padding-right: 5px;
 }
 
 .search-container{
@@ -109,8 +111,7 @@ a.search-bar{
     border-radius: 2px;
     display: block;
     padding: 0;
-    margin-top: 30px;
-    margin-left: 20px;
+    margin: 3% 0 2.5% 1.5%;
 }
 
 .menu{
@@ -150,6 +151,10 @@ li:hover{
     background: #ffffff;
 }
 
+._currentFilter{
+    background: #ffffff;
+}
+
 .count{
     float:right;
     padding: 1px 5px;
@@ -159,4 +164,38 @@ li:hover{
     background: #eeeeee;
     border-radius: 2px;
     margin-right: 5px;
+}
+
+.no-results{
+    padding-top: 8%;
+}
+
+.context{
+    text-align: center;
+    color: #9f9f9f;
+}
+
+.jPag-pages li a{
+    border-radius: 2px;
+}
+
+.jPag-first{
+    border-radius: 2px;
+}
+
+.jPag-last{
+    border-radius: 2px;
+}
+
+.pagination-stub{
+    text-align:center;
+}
+
+.jPaginate div{
+    margin-left: 200px;
+}
+
+.search-context{
+    color: #d0d0d0;
+    text-align:center;
 }
