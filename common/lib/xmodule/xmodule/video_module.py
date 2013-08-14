@@ -144,8 +144,7 @@ class VideoModule(VideoFields, XModule):
             resource_string(__name__, 'js/src/video/07_video_volume_control.js'),
             resource_string(__name__, 'js/src/video/08_video_speed_control.js'),
             resource_string(__name__, 'js/src/video/09_video_caption.js'),
-            resource_string(__name__, 'js/src/video/10_main.js'),
-            resource_string(__name__, 'js/src/video/subtitles/subtitles.js')
+            resource_string(__name__, 'js/src/video/10_main.js')
         ]
     }
     css = {'scss': [resource_string(__name__, 'css/video/display.scss')]}

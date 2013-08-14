@@ -1,5 +1,60 @@
+<%! from django.utils.translation import ugettext as _ %>
+<%namespace name='static' file='../../static_content.html'/>
+
+<%
+  import hashlib
+  import copy
+  import json
+  hlskey = hashlib.md5(module.location.url()).hexdigest()
+%>
+
+## js templates
+
+<div class="wrapper-comp-settings basic_metadata_edit" data-metadata='{
+   "display_name":{
+      "default_value":"Video",
+      "explicitly_set":false,
+      "display_name":"Display Name",
+      "help":"Display name for this module.",
+      "inheritable":false,
+      "type":"Generic",
+      "field_name":"display_name",
+      "options":[
+
+      ],
+      "value":"Video"
+   },
+   "html5_sources":{
+      "default_value":[
+
+      ],
+      "explicitly_set":false,
+      "display_name":"Video Sources",
+      "help":"A list of filenames to be used with HTML5 video. The first supported filetype will be displayed.",
+      "inheritable":false,
+      "type":"List",
+      "field_name":"html5_sources",
+      "options":[
+
+      ],
+      "value":[
+
+      ]
+   }
+}'></div>
+
 <script type="text/javascript">
-    (function(){
-        new Subtitles();
-    }());
+    metadataEditor = $('.component-editor').find('.basic_metadata_edit');
+    metadataData = JSON.parse(metadataEditor.data('metadata'));
+    models = [];
+    for (key in metadataData){
+        if(metadataData.hasOwnProperty(key)){
+            models.push(metadataData[key])
+        }
+    }
+    _metadataEditor = new CMS.Views.Metadata.Editor({
+        el: metadataEditor,
+        collection: new CMS.Models.MetadataCollection(models)
+    })
+
 </script>
