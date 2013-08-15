@@ -425,8 +425,8 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
     has_score = False
 
     # A list of descriptor attributes that must be equal for the descriptors to
-    # be equal
-    equality_attributes = ('_model_data', 'location')
+    # be equal--will always test the xblock fields
+    equality_attributes = ('location')
 
     # Class level variable
 
@@ -644,7 +644,9 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
                 all(getattr(self, attr, None) == getattr(other, attr, None)
-                    for attr in self.equality_attributes))
+                    for attr in self.equality_attributes) and
+                all(getattr(self, field.name, None) == getattr(other, field.name, None)
+                    for field in self.iterfields()))
 
     def __repr__(self):
         return (

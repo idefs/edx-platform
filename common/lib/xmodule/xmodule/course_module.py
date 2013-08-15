@@ -72,6 +72,14 @@ class Textbook(object):
 
         self.end_page = int(last_el.attrib['page'])
 
+    def __eq__(self, other):
+        return (self.title == other.title and
+            self.book_url == other.book_url and
+            self.start_page == other.start_page and
+            self.end_page == other.end_page and
+            # could actually compare structures and ignore whitespace but this seemed easiest if not quite sound
+            etree.tostring(self.table_of_contents) == etree.tostring(other.table_of_contents))
+
     @lazyproperty
     def table_of_contents(self):
         """
