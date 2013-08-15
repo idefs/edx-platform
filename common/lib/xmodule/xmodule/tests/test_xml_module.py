@@ -1,14 +1,16 @@
 # disable missing docstring
 #pylint: disable=C0111
 
-from xmodule.x_module import XModuleFields
+from xmodule.x_module import XModuleFields, XModuleDescriptor
 from xblock.core import Scope, String, Dict, Boolean, Integer, Float, Any, List
 from xmodule.fields import Date, Timedelta
-from xmodule.xml_module import XmlDescriptor, serialize_field, deserialize_field
+from xmodule.xml_module import XmlDescriptor, serialize_field, deserialize_field, XmlUsage
 import unittest
 from .import get_test_system
 from nose.tools import assert_equals
 from mock import Mock
+from xmodule.modulestore.inheritance import InheritanceKeyValueStore
+from xblock.runtime import DbModel
 
 
 class CrazyJsonString(String):
@@ -83,11 +85,14 @@ class EditableMetadataFieldsTest(unittest.TestCase):
         )
 
     def test_inherited_field(self):
-        model_val = {'display_name': 'inherited'}
-        descriptor = self.get_descriptor(model_val)
+        kvs = InheritanceKeyValueStore(initial_values={})
+        # randomly using XModuleDescriptor b/c the Test descriptor is hidden
+        model_data = DbModel(kvs, XModuleDescriptor, None, XmlUsage('location.course_id', Mock()))
+
+        inherited = {'display_name': 'inherited'}
+        descriptor = self.get_descriptor(model_data)
         # Mimic an inherited value for display_name (inherited and inheritable are the same in this case).
-        descriptor._inherited_metadata = model_val
-        descriptor._inheritable_metadata = model_val
+        descriptor.xblock_kvs.inherited_settings = inherited
         editable_fields = descriptor.editable_metadata_fields
         self.assert_field_values(
             editable_fields, 'display_name', TestFields.display_name,
@@ -96,8 +101,7 @@ class EditableMetadataFieldsTest(unittest.TestCase):
 
         descriptor = self.get_descriptor({'display_name': 'explicit'})
         # Mimic the case where display_name WOULD have been inherited, except we explicitly set it.
-        descriptor._inheritable_metadata = {'display_name': 'inheritable value'}
-        descriptor._inherited_metadata = {}
+        descriptor.xblock_kvs.inherited_settings = {'display_name': 'inheritable value'}
         editable_fields = descriptor.editable_metadata_fields
         self.assert_field_values(
             editable_fields, 'display_name', TestFields.display_name,

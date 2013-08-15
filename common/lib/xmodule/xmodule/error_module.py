@@ -14,6 +14,9 @@ from xmodule.editing_module import JSONEditingDescriptor
 from xmodule.errortracker import exc_info_to_str
 from xmodule.modulestore import Location
 from xblock.core import String, Scope
+from xmodule.modulestore.inheritance import InheritanceKeyValueStore
+from xblock.runtime import DbModel
+from xmodule.xml_module import XmlUsage
 
 
 log = logging.getLogger(__name__)
@@ -100,6 +103,8 @@ class ErrorDescriptor(ErrorFields, JSONEditingDescriptor):
             'location': location,
             'category': 'error'
         }
+        kvs = InheritanceKeyValueStore(initial_values=model_data)
+        model_data = DbModel(kvs, cls, None, XmlUsage('error', location))
         return cls(
             system,
             model_data,

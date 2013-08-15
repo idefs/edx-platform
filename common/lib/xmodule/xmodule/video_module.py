@@ -22,7 +22,7 @@ from django.conf import settings
 from xmodule.x_module import XModule
 from xmodule.editing_module import TabsEditingDescriptor
 from xmodule.raw_module import EmptyDataRawDescriptor
-from xmodule.xml_module import is_pointer_tag, name_to_pathname
+from xmodule.xml_module import is_pointer_tag, name_to_pathname, XmlUsage
 from xmodule.modulestore import Location
 from xmodule.modulestore.mongo import MongoModuleStore
 from xmodule.modulestore.django import modulestore
@@ -31,6 +31,8 @@ from xblock.core import Scope, String, Boolean, Float, List, Integer
 
 import datetime
 import time
+from xmodule.modulestore.inheritance import InheritanceKeyValueStore
+from xblock.runtime import DbModel
 
 log = logging.getLogger(__name__)
 
@@ -235,8 +237,14 @@ class VideoDescriptor(VideoFields, TabsEditingDescriptor, EmptyDataRawDescriptor
         if is_pointer_tag(xml_object):
             filepath = cls._format_filepath(xml_object.tag, name_to_pathname(url_name))
             xml_data = etree.tostring(cls.load_file(filepath, system.resources_fs, location))
-        model_data = VideoDescriptor._parse_video_xml(xml_data)
-        model_data['location'] = location
+        fields = VideoDescriptor._parse_video_xml(xml_data)
+        fields['location'] = location
+        kvs = InheritanceKeyValueStore(initial_values=fields)
+        if org is not None and course is not None:
+            course_id = '{}/{}'.format(org, course)
+        else:
+            course_id = ''
+        model_data = DbModel(kvs, cls, None, XmlUsage(course_id, location))
         video = cls(system, model_data)
         return video
 

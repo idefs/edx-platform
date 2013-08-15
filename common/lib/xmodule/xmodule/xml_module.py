@@ -9,8 +9,9 @@ from lxml import etree
 from xblock.core import Dict, Scope
 from xmodule.x_module import (XModuleDescriptor, policy_key)
 from xmodule.modulestore import Location
-from xmodule.modulestore.inheritance import own_metadata
+from xmodule.modulestore.inheritance import own_metadata, InheritanceKeyValueStore
 from xmodule.modulestore.xml_exporter import EdxJSONEncoder
+from xblock.runtime import DbModel
 
 log = logging.getLogger(__name__)
 
@@ -123,6 +124,7 @@ def deserialize_field(field, value):
         # Support older serialized version.
         return value
 
+XmlUsage = namedtuple('XmlUsage', 'id, def_id')  # b/c DbModel expects these
 
 class XmlDescriptor(XModuleDescriptor):
     """
@@ -347,18 +349,21 @@ class XmlDescriptor(XModuleDescriptor):
         if k in system.policy:
             cls.apply_policy(metadata, system.policy[k])
 
-        model_data = {}
-        model_data.update(metadata)
-        model_data.update(definition)
-        model_data['children'] = children
+        fields = {}
+        fields.update(metadata)
+        fields.update(definition)
+        fields['children'] = children
 
-        model_data['xml_attributes'] = {}
-        model_data['xml_attributes']['filename'] = definition.get('filename', ['', None])  # for git link
+        fields['xml_attributes'] = {}
+        fields['xml_attributes']['filename'] = definition.get('filename', ['', None])  # for git link
         for key, value in metadata.items():
             if key not in set(f.name for f in cls.fields + cls.lms.fields):
-                model_data['xml_attributes'][key] = value
-        model_data['location'] = location
-        model_data['category'] = xml_object.tag
+                fields['xml_attributes'][key] = value
+        fields['location'] = location
+        fields['category'] = xml_object.tag
+        kvs = InheritanceKeyValueStore(initial_values=fields)
+        # is there a good way to get the org/course/run or does it matter? (this is not the /run)
+        model_data = DbModel(kvs, cls, None, XmlUsage(location.course_id, location))
 
         return cls(
             system,
