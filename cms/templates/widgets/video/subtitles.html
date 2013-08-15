@@ -44,17 +44,9 @@
 }'></div>
 
 <script type="text/javascript">
-    metadataEditor = $('.component-editor').find('.basic_metadata_edit');
-    metadataData = JSON.parse(metadataEditor.data('metadata'));
-    models = [];
-    for (key in metadataData){
-        if(metadataData.hasOwnProperty(key)){
-            models.push(metadataData[key])
-        }
-    }
-    _metadataEditor = new CMS.Views.Metadata.Editor({
-        el: metadataEditor,
-        collection: new CMS.Models.MetadataCollection(models)
+    $(document).ready(function(){
+        new Transcripts({
+            el: $('.component-editor').find('.basic_metadata_edit')
+        });
     })
-
 </script>
