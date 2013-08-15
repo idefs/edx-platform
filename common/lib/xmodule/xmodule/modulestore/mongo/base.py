@@ -22,19 +22,19 @@ from fs.osfs import OSFS
 from itertools import repeat
 from path import path
 from operator import attrgetter
-from uuid import uuid4
 
 from importlib import import_module
 from xmodule.errortracker import null_error_tracker, exc_info_to_str
 from xmodule.mako_module import MakoDescriptorSystem
 from xmodule.x_module import XModuleDescriptor
 from xmodule.error_module import ErrorDescriptor
-from xblock.runtime import DbModel, KeyValueStore, InvalidScopeError
+from xblock.runtime import DbModel, InvalidScopeError
 from xblock.core import Scope
 
 from xmodule.modulestore import ModuleStoreBase, Location, namedtuple_to_son
 from xmodule.modulestore.exceptions import ItemNotFoundError
-from xmodule.modulestore.inheritance import own_metadata, INHERITABLE_METADATA, inherit_metadata
+from xmodule.modulestore.inheritance import own_metadata, INHERITABLE_METADATA, inherit_metadata, \
+    InheritanceKeyValueStore
 
 log = logging.getLogger(__name__)
 
@@ -57,12 +57,13 @@ class InvalidWriteError(Exception):
     """
 
 
-class MongoKeyValueStore(KeyValueStore):
+class MongoKeyValueStore(InheritanceKeyValueStore):
     """
     A KeyValueStore that maps keyed data access to one of the 3 data areas
     known to the MongoModuleStore (data, children, and metadata)
     """
     def __init__(self, data, children, metadata, location, category):
+        super(MongoKeyValueStore, self).__init__()
         self._data = data
         self._children = children
         self._metadata = metadata
@@ -75,7 +76,12 @@ class MongoKeyValueStore(KeyValueStore):
         elif key.scope == Scope.parent:
             return None
         elif key.scope == Scope.settings:
-            return self._metadata[key.field_name]
+            if key.field_name in self._metadata:
+                return self._metadata[key.field_name]
+            elif key.field_name in self.inherited_settings:
+                return self.inherited_settings[key.field_name]
+            else:
+                raise KeyError()  # get the default
         elif key.scope == Scope.content:
             if key.field_name == 'location':
                 return self._location
@@ -83,8 +89,10 @@ class MongoKeyValueStore(KeyValueStore):
                 return self._category
             elif key.field_name == 'data' and not isinstance(self._data, dict):
                 return self._data
-            else:
+            elif key.field_name in self._data:
                 return self._data[key.field_name]
+            else:
+                raise KeyError()  # get the default
         else:
             raise InvalidScopeError(key.scope)
 

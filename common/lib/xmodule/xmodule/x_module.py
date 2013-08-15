@@ -638,6 +638,7 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
         """
         # if caller wants kvs, caller's assuming it's up to date; so, decache it
         self.save()
+        # pylint: disable = W0212
         return self._model_data._kvs
 
     # =============================== BUILTIN METHODS ==========================
@@ -685,21 +686,12 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
         Get a dictionary of the fields for the given scope which are set explicitly on this xblock. (Including
         any set to None.)
         """
-        if scope == Scope.settings and hasattr(self, '_inherited_metadata'):
-            inherited_metadata = getattr(self, '_inherited_metadata')
-            result = {}
-            for field in self.iterfields():
-                if (field.scope == scope and
-                        field.name in self._model_data and
-                        field.name not in inherited_metadata):
-                    result[field.name] = self._model_data[field.name]
-            return result
-        else:
-            result = {}
-            for field in self.iterfields():
-                if (field.scope == scope and field.name in self._model_data):
-                    result[field.name] = self._model_data[field.name]
-            return result
+        result = {}
+        # the 'field.name in' is the magic which ensures it's locally set not the _model_data[field.name]
+        for field in self.iterfields():
+            if (field.scope == scope and field.name in self._model_data):
+                result[field.name] = self._model_data[field.name]
+        return result
 
     @property
     def editable_metadata_fields(self):
@@ -708,23 +700,26 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
 
         Can be limited by extending `non_editable_metadata_fields`.
         """
-        inherited_metadata = getattr(self, '_inherited_metadata', {})
-        inheritable_metadata = getattr(self, '_inheritable_metadata', {})
         metadata_fields = {}
-        for field in self.fields:
+        for field in self.iterfields():
 
             if field.scope != Scope.settings or field in self.non_editable_metadata_fields:
                 continue
 
-            inheritable = False
-            value = getattr(self, field.name)
-            default_value = field.default
-            explicitly_set = field.name in self._model_data
-            if field.name in inheritable_metadata:
-                inheritable = True
-                default_value = field.from_json(inheritable_metadata.get(field.name))
-                if field.name in inherited_metadata:
-                    explicitly_set = False
+            # gets the 'default_value', 'inheritable', and 'explicitly_set' attrs
+            try:
+                metadata_fields[field.name] = self.runtime.get_field_provenance(field)
+            except AttributeError:
+                # dhm: i believe only our crufty test systems can get here (in particular get_test_system)
+                metadata_fields[field.name] = {
+                    'default_value': field.default,
+                    'inheritable': False,
+                    'explicitly_set': field.name in self._model_data
+                }
+            metadata_fields[field.name]['field_name'] = field.name
+            metadata_fields[field.name]['display_name'] = field.display_name
+            metadata_fields[field.name]['help'] = field.help
+            metadata_fields[field.name]['value'] = field.read_json(self)
 
             # We support the following editors:
             # 1. A select editor for fields with a list of possible values (includes Booleans).
@@ -738,6 +733,7 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
                 if len(values) > 0:
                     editor_type = "Select"
                 for index, choice in enumerate(values):
+                    # why doesn't above deepcopy suffice?
                     json_choice = copy.deepcopy(choice)
                     if isinstance(json_choice, dict) and 'value' in json_choice:
                         json_choice['value'] = field.to_json(json_choice['value'])
@@ -750,17 +746,10 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
                 editor_type = "Float"
             elif isinstance(field, List):
                 editor_type = "List"
-            metadata_fields[field.name] = {
-               'field_name': field.name,
+            metadata_fields[field.name].update({
                'type': editor_type,
-               'display_name': field.display_name,
-               'value': field.to_json(value),
                'options': [] if values is None else values,
-               'default_value': field.to_json(default_value),
-               'inheritable': inheritable,
-               'explicitly_set': explicitly_set,
-               'help': field.help,
-            }
+            })
 
         return metadata_fields
 
@@ -778,6 +767,11 @@ class XModuleDescriptor(XModuleFields, HTMLSnippet, ResourceTemplates, XBlock):
 
 
 class DescriptorSystem(Runtime):
+    # where can I put these constants so that the kvs can use them w/o circular imports?
+    PROVENANCE_LOCAL = 'local'
+    PROVENANCE_DEFAULT = 'default'
+    PROVENANCE_INHERITED = 'inherited'
+
     def __init__(self, load_item, resources_fs, error_tracker, **kwargs):
         """
         load_item: Takes a Location and returns an XModuleDescriptor
@@ -822,6 +816,36 @@ class DescriptorSystem(Runtime):
     def get_block(self, block_id):
         """See documentation for `xblock.runtime:Runtime.get_block`"""
         return self.load_item(block_id)
+
+    def get_field_provenance(self, xblock, field):
+        """
+        For the given xblock, return a dict for the field's current state:
+        {
+            'default_value': what value will take effect if field is unset: either the field default or,
+            'inheritable': whether the default comes via inheritance rather than field default (boolean),
+            'explicitly_set': boolean for whether the current value is set v default/inherited,
+        }
+        :param xblock:
+        :param field:
+        """
+        # in runtime b/c runtime contains app-specific xblock behavior. Studio's the only app
+        # which needs this level of introspection right now. runtime also is 'allowed' to know
+        # about the kvs, dbmodel, etc.
+
+        # This method 'knows' about our 2 different kvs's and how they store data.
+        result = {}
+        result['explicitly_set'] = field.name in xblock._model_data
+        try:
+            block_inherited = xblock.xblock_kvs.inherited_settings
+        except AttributeError:  # inherited_settings doesn't exist on kvs
+            block_inherited = {}
+        if field.name in block_inherited:
+            result['default_value'] = block_inherited[field.name]
+            result['inheritable'] = True
+        else:
+            result['default_value'] = field.default
+            result['inheritable'] = False
+        return result
 
 
 class XMLParsingSystem(DescriptorSystem):

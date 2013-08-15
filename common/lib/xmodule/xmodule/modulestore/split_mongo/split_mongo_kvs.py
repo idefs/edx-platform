@@ -1,39 +1,33 @@
 import copy
 from xblock.core import Scope
 from collections import namedtuple
-from xblock.runtime import KeyValueStore, InvalidScopeError
+from xblock.runtime import InvalidScopeError
 from .definition_lazy_loader import DefinitionLazyLoader
+from xmodule.modulestore.inheritance import InheritanceKeyValueStore
 
 # id is a BlockUsageLocator, def_id is the definition's guid
 SplitMongoKVSid = namedtuple('SplitMongoKVSid', 'id, def_id')
 
 
-PROVENANCE_LOCAL = 'local'
-PROVENANCE_DEFAULT = 'default'
-PROVENANCE_INHERITED = 'inherited'
-
-class SplitMongoKVS(KeyValueStore):
+class SplitMongoKVS(InheritanceKeyValueStore):
     """
     A KeyValueStore that maps keyed data access to one of the 3 data areas
     known to the MongoModuleStore (data, children, and metadata)
     """
 
-    def __init__(self, definition, fields, _inherited_settings, location, category):
+    def __init__(self, definition, fields, inherited_settings, location, category):
         """
 
         :param definition: either a lazyloader or definition id for the definition
         :param fields: a dictionary of the locally set fields
-        :param _inherited_settings: the value of each inheritable field from above this.
+        :param inherited_settings: the value of each inheritable field from above this.
             Note, local fields may override and disagree w/ this b/c this says what the value
             should be if the field is undefined.
         """
-        # ensure kvs's don't share objects w/ others so that changes can't appear in separate ones
-        # the particular use case was that changes to kvs's were polluting caches. My thinking was
-        # that kvs's should be independent thus responsible for the isolation.
+        super(SplitMongoKVS, self).__init__(copy.copy(fields), inherited_settings)
         self._definition = definition  # either a DefinitionLazyLoader or the db id of the definition.
         # if the db id, then the definition is presumed to be loaded into _fields
-        self._fields = copy.copy(fields)
-        self._inherited_settings = _inherited_settings
+
         self._location = location
         self._category = category
 
@@ -51,8 +45,8 @@ class SplitMongoKVS(KeyValueStore):
             raise KeyError()
         elif key.scope == Scope.settings:
             # didn't find in _fields; so, get from inheritance since not locally set
-            if key.field_name in self._inherited_settings:
-                return self._inherited_settings[key.field_name]
+            if key.field_name in self.inherited_settings:
+                return self.inherited_settings[key.field_name]
             else:
                 # or get default
                 raise KeyError()
@@ -136,39 +130,33 @@ class SplitMongoKVS(KeyValueStore):
         # if someone changes it so that they do, then change any tests of field.name in xx._model_data
         return key.field_name in self._fields
 
-    # would like to just take a key, but there's a bunch of magic in DbModel for constructing the key via
-    # a private method
-    def field_value_provenance(self, key_scope, key_name):
+    def field_value_provenance(self, key):
         """
-        Where the field value comes from: one of [PROVENANCE_LOCAL, PROVENANCE_DEFAULT, PROVENANCE_INHERITED].
+        Where the field value comes from: one of ['local', 'default', 'inherited'].
         """
+        # I had the return values in constants but kept getting circular import dependencies. Do we have
+        # a std safe place for such constants?
         # handle any special cases
-        if key_scope == Scope.content:
-            if key_name == 'location':
-                return PROVENANCE_LOCAL
-            elif key_name == 'category':
-                return PROVENANCE_LOCAL
+        if key.scope == Scope.content:
+            if key.name == 'location':
+                return 'local'
+            elif key.name == 'category':
+                return 'local'
             else:
                 self._load_definition()
-                if key_name in self._fields:
-                    return PROVENANCE_LOCAL
+                if key.name in self._fields:
+                    return 'local'
                 else:
-                    return PROVENANCE_DEFAULT
-        elif key_scope == Scope.parent:
-            return PROVENANCE_DEFAULT
+                    return 'default'
+        elif key.scope == Scope.parent:
+            return 'default'
         # catch the locally set state
-        elif key_name in self._fields:
-            return PROVENANCE_LOCAL
-        elif key_scope == Scope.settings and key_name in self._inherited_settings:
-            return PROVENANCE_INHERITED
+        elif key.name in self._fields:
+            return 'local'
+        elif key.scope == Scope.settings and key.name in self.inherited_settings:
+            return 'inherited'
         else:
-            return PROVENANCE_DEFAULT
-
-    def get_inherited_settings(self):
-        """
-        Get the settings set by the ancestors (which locally set fields may override or not)
-        """
-        return self._inherited_settings
+            return 'default'
 
     def _load_definition(self):
         """
