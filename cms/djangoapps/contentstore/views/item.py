@@ -1,4 +1,8 @@
+"""Views for items (modules)."""
+
 from uuid import uuid4
+
+import logging
 
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
@@ -6,14 +10,17 @@ from django.contrib.auth.decorators import login_required
 from xmodule.modulestore import Location
 from xmodule.modulestore.django import modulestore
 from xmodule.modulestore.inheritance import own_metadata
+from xmodule.modulestore.exceptions import ItemNotFoundError, InvalidLocationError
 
 from util.json_request import expect_json, JsonResponse
-from ..utils import get_modulestore
+from ..utils import get_modulestore, manage_video_subtitles
 from .access import has_access
 from .requests import _xmodule_recurse
 from xmodule.x_module import XModuleDescriptor
 
 __all__ = ['save_item', 'create_item', 'delete_item']
+
+log = logging.getLogger(__name__)
 
 # cdodge: these are categories which should not be parented, they are detached from the hierarchy
 DETACHED_CATEGORIES = ['about', 'static_tab', 'course_info']
@@ -77,6 +84,15 @@ def save_item(request):
         # commit to datastore
         store.update_metadata(item_location, own_metadata(existing_item))
 
+    try:
+        item = modulestore().get_item(item_location)
+    except (ItemNotFoundError, InvalidLocationError):
+        log.error("Can't find item by location.")
+        return False
+
+    if item.category == 'video':
+        manage_video_subtitles(item)
+
     return JsonResponse()
 
 
@@ -93,6 +109,7 @@ def _get_xblock_field(xblock, field_name):
 @login_required
 @expect_json
 def create_item(request):
+    """View for create items."""
     parent_location = Location(request.POST['parent_location'])
     category = request.POST['category']
 
@@ -135,6 +152,7 @@ def create_item(request):
 @login_required
 @expect_json
 def delete_item(request):
+    """View for removing items."""
     item_location = request.POST['id']
     item_location = Location(item_location)
 
