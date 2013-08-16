@@ -28,13 +28,14 @@ def flaky_request(method, url, attempts=2, **kwargs):
             return requests.request(method, url, **kwargs)
         except RequestException:
             pass
-    raise EmptyFieldException
+    return None
 
 
-class EmptyFieldException(Exception):
+class NoSearchableTextException(Exception):
     """
-    Basic Exception raised whenever a field that should be filled is returned empty
+    Basic Exception raised whenever searchable text cannot be found for an object
     """
+
     pass
 
 
@@ -177,7 +178,7 @@ class MongoIndexer:
         # Videos with a single speed still include commas. If a speed is completely lacking
         # uuids will only be of length 1, but that seems to be the only case.
         if len(uuids) == 1:  # Some videos are just left over demos without links
-            raise EmptyFieldException
+            return None
         # The colon is kind of a hack to make sure there will always be a second element since
         # some entries don't have a second entry
         # Example: <video youtube="1.0:uuid,1.50, someother_metadata"/>
@@ -197,11 +198,11 @@ class MongoIndexer:
         # if that is ever present this should be switched. Right now it only applies to two videos.
             return "https://lh6.ggpht.com/8_h5j6hiFXdSl5atSJDf8bJBy85b3IlzNWeRzOqRurfNVI_oiEG-dB3C0vHRclOG8A=w170"
         else:
-            try:
-                uuid = self._get_uuid_from_video_module(video_module)
-                return "http://img.youtube.com/vi/%s/0.jpg" % uuid
-            except EmptyFieldException:
+            uuid = self._get_uuid_from_video_module(video_module)
+            if uuid is None:
                 return "http://img.youtube.com"
+            else:
+                return "http://img.youtube.com/vi/%s/0.jpg" % uuid
 
     def _get_thumbnail_from_html(self, html):
         """
@@ -219,7 +220,7 @@ class MongoIndexer:
 
     def _get_searchable_text_from_problem_data(self, mongo_element):
         """
-        Returns some fasimile of searchable text from a mongo problem element
+        Returns some fascimile of searchable text from a mongo problem element
 
         The data field from the problem is in weird xml, which is good for functionality, but bad for search
         """
@@ -237,7 +238,10 @@ class MongoIndexer:
         # Problems sometimes include large swaths of repeated text, this regex will just remove
         # long strings of identical repeated text
         remove_repetitions = re.sub(r"(.)\1{10,}", "", remove_tags)
-        return remove_repetitions
+        if remove_repetitions is None:
+            raise NoSearchableTextException
+        else:
+            return remove_repetitions
 
     def _find_transcript_for_video_module(self, video_module):
         """
@@ -250,16 +254,16 @@ class MongoIndexer:
         if isinstance(data, dict):  # For some reason there are nested versions
             data = data.get("data", "")
         if isinstance(data, unicode) is False:  # for example videos
-            raise EmptyFieldException
+            raise NoSearchableTextException
         uuid = self._get_uuid_from_video_module(video_module)
-        if uuid:
-            name_pattern = re.compile(".*" + uuid + ".*")
+        if uuid is None:
+            raise NoSearchableTextException
         else:
-            raise EmptyFieldException
+            name_pattern = re.compile(".*" + uuid + ".*")
         chunk = (self._chunk_collection.find_one({"files_id.name": name_pattern}) or
             self._edge_chunk_collection.find_one({"files_id.name": name_pattern}))
         if chunk is None:
-            raise EmptyFieldException
+            raise NoSearchableTextException
         else:
             try:
                 chunk_data = chunk["data"].decode('utf-8')
@@ -268,7 +272,7 @@ class MongoIndexer:
                     # This is an obscure, barely documented occurance where apple broke tarballs
                     # and decided to shove error messages into tar metadata which causes this.
                     # https://discussions.apple.com/thread/3145071?start=0&tstart=0
-                    raise EmptyFieldException
+                    raise NoSearchableTextException
                 else:
                     try:
                         return " ".join(filter(None, json.loads(chunk_data)["text"]))
@@ -276,7 +280,7 @@ class MongoIndexer:
                         log.error("Transcript for: " + uuid + " is invalid")
                         return chunk_data
             except UnicodeError:
-                raise EmptyFieldException
+                raise NoSearchableTextException
 
     def _get_searchable_text(self, mongo_module, type_):
         """
@@ -364,7 +368,7 @@ class MongoIndexer:
                     index = "problem-index"
                 else:
                     continue
-            except EmptyFieldException:
+            except NoSearchableTextException:
                 continue
             index_string += self._get_bulk_index_item(index, data)
             if counter % chunk_size and counter > 1:
