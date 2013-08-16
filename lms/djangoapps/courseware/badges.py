@@ -1,11 +1,12 @@
-import json
-import urllib2
-
-from django.conf import settings
-
 """
 Contains the function make_badge_data, responsible for getting badge data from the badge service.
 """
+
+import json
+import requests
+
+from django.conf import settings
+
 
 def make_badge_data(request, course=None):
     """
@@ -30,8 +31,7 @@ def make_badge_data(request, course=None):
             url = settings.BADGE_SERVICE_URL + url
 
         try:
-            f = urllib2.urlopen(url)
-            obj = json.loads(f.read())
+            obj = requests.get(url).json
 
             results = obj.get('results', None)
 
@@ -39,8 +39,7 @@ def make_badge_data(request, course=None):
                 next_url = obj.get('next', None)
 
                 while next_url is not None:
-                    next_f = urllib2.urlopen(next_url)
-                    next_obj = json.loads(next_f)
+                    next_obj = request.get(next_url).json
                     results.extend(next_obj.get('results', []))
                     next_url = obj.get('next', None)
 
@@ -49,11 +48,11 @@ def make_badge_data(request, course=None):
             else:
                 return obj
 
-        except:
+        except Exception as e:
+            print e
             print "Badge service failing? URL not found -- %s" % str(url)
             return []
 
-    badges_url = 'badges/.json?email=%s' % email
 
     if course is not None:
 
@@ -75,6 +74,7 @@ def make_badge_data(request, course=None):
         ]
 
     else:
+        badges_url = 'badges/.json?email=%s' % email
         unlockable_badgeclasses = []
         earned_badges = read(badges_url)
 
@@ -85,6 +85,17 @@ def make_badge_data(request, course=None):
         for earned_badge in earned_badges
         if 'href' in earned_badge
     ]
+
+    # Remove duplicate badges from earned_badges. It looks really silly to have two of the same exact badge.
+    new_earned_badges = []
+    new_earned_badgeclasses = []
+    for badge in earned_badges:
+        if not badge['badgeclass'] in new_earned_badgeclasses:
+            new_earned_badges.append(badge)
+            new_earned_badgeclasses.append(badge['badgeclass'])
+            print "Added: "+str(badge)
+
+    earned_badges = new_earned_badges
 
     # Replace the field 'badge' in earned_badges, which is a URL, with the content of that URL.
     # ... and also the field 'issuer' in _that_ content, which is a URL, with the content of that URL.

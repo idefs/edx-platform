@@ -51,7 +51,6 @@ from collections import namedtuple
 
 from courseware.courses import get_courses, sort_by_announcement
 from courseware.access import has_access
-from courseware.badges import make_badge_data
 
 from external_auth.models import ExternalAuthMap
 
@@ -305,19 +304,6 @@ def dashboard(request):
                }
 
     return render_to_response('dashboard.html', context)
-
-
-@login_required
-def badges_profile(request):
-    """
-    This page primarily exists as a prototype so that it's easier for someone to figure out how to make one later.
-    Controlled by feature flag: ENABLE_STUDENT_BADGE_DISPLAY_DASHBOARD
-    """
-    context = {
-        'badge_data': make_badge_data(request)
-    }
-
-    return render_to_response('badges_profile.html', context)
 
 
 def try_change_enrollment(request):

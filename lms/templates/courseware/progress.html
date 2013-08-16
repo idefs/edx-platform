@@ -20,88 +20,47 @@
 <script type="text/javascript" src="${static.url('js/vendor/flot/jquery.flot.js')}"></script>
 <script type="text/javascript" src="${static.url('js/vendor/flot/jquery.flot.stack.js')}"></script>
 <script type="text/javascript" src="${static.url('js/vendor/flot/jquery.flot.symbol.js')}"></script>
+
 <script>
 ${progress_graph.body(grade_summary, course.grade_cutoffs, "grade-detail-graph", not course.no_grade, not course.no_grade)}
-
 </script>
 
-<style>
-img.badgelet {
-  margin: 10px;
-  height: 60px;
-  border-radius: 3px;
-}
+%if settings.MITX_FEATURES.get('ENABLE_STUDENT_BADGE_DISPLAY_COURSEWARE', False):
+  <style>
+    img.badgelet {
+      margin: 10px;
+      height: 60px;
+      border-radius: 3px;
+    }
+    img.badgelet:hover {
+      box-shadow: 3px 3px 5px #888888;
+    }
+    img.unlockable {
+              filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale"); /* Firefox 10+, Firefox on Android */
+              filter: grayscale( 100% );
+              filter: gray;
+      -webkit-filter: grayscale( 100% );
+         -moz-filter: grayscale( 100% );
+           -o-filter: grayscale( 100% );
+          -ms-filter: grayscale( 100% );
 
-img.unlockable {
-          filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale"); /* Firefox 10+, Firefox on Android */
-          filter: grayscale( 100% );
-          filter: gray;
-  -webkit-filter: grayscale( 100% );
-     -moz-filter: grayscale( 100% );
-       -o-filter: grayscale( 100% );
-      -ms-filter: grayscale( 100% );
-  opacity: 0.7;
-  -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=70)";
-  filter: alpha(opacity=70);
-  -moz-opacity:0.7;
-  -khtml-opacity: 0.7;
-}
+      opacity: 0.4;
+      -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=40)";
+      filter: alpha(opacity=40);
+      -moz-opacity:0.4;
+      -khtml-opacity: 0.4;
+    }
+  </style>
 
-a small {
-  display: none;
-  background: #FFF;
-  text-align: center;
-  padding: 5px;
-  border-left: 1px solid #111;
-  border-top: 1px solid #111;
-  border-right: 1px solid #333;
-  border-bottom: 1px solid #333;
-  border-radius: 3px;
-  color: #fff;
-  text-indent: 0;
-  max-width: 200px;
-}
+  <script>
+    email = "${student.email}";
+    course_id = "${course.id}";
+    badge_service_url = "${settings.BADGE_SERVICE_URL}";
+  </script>
 
-a:hover small.imaginary {
-  display: block;
-  position: absolute;
-  top: 0%;
-  z-index: 9999;
-}
+  <script type="text/javascript" src="${static.url('js/progress_badgelets.js')}"></script>
+%endif
 
-/*Breaks if named tooltip instead of tooltipped. No idea why.*/
-a.tooltipped {
-    display: inline;
-    position: relative;
-    font-size:80%;
-    overflow:hidden;
-}
-
-a.tooltipped:hover:after{
-    background: #333;
-    border-radius:6px;
-    bottom: 21px;
-    color: #fff;
-    content: attr(title_text);
-    left: 20%;
-    padding: 5px 15px;
-    position: absolute;
-    z-index: 98;
-    max-width: 500px;
-}
-
-a.tooltipped:hover:before{
-    border: solid;
-    border-color: #333 transparent;
-    border-width: 8px 8px 0 8px;
-    bottom: 15px;
-    content: "";
-    left: 50%;
-    position: absolute;
-    z-index: 99;
-}
-
-</style>
 
 </%block>
 
@@ -119,29 +78,10 @@ a.tooltipped:hover:before{
         <div id="grade-detail-graph" aria-hidden="true"></div>
       %endif
 
-      %if badges_enabled:
-        %if len(badge_data['unlockable_badgeclasses']) != 0 or len(badge_data['earned_badges']) != 0:
-          <hr />
-          <div style="position:relative; text-align:center;">
-            <div style="overflow-x:scroll; overflow-y:hidden; white-space:nowrap;">
-              <span style="padding-right:100px">&nbsp;</span>
-              %for i in range(len(badge_data['earned_badges'])):
-                <%badge = badge_data['earned_badges'][i]%>
-                <%badgeclass = badge.get('badge', {})%>
-                <%num = badgeclass.get('number_awarded')%>
-                <a href="./badges" class="tooltipped" title_text="${badgeclass.get('name')}"><img src="${badge.get('image', '')}" class="badgelet" />
-                </a>
-              %endfor
-              %for i in range(len(badge_data['unlockable_badgeclasses'])):
-                <%badgeclass = badge_data['unlockable_badgeclasses'][i]%>
-                <%num = badgeclass.get('number_awarded')%>
-                <a href="./badges"><img src="${badgeclass.get('image', '')}" class="badgelet unlockable" />
-                </a>
-              %endfor
-              <span style="padding-right:100px">&nbsp;</span>
-            </div>
-          </div>
-        %endif
+      %if settings.MITX_FEATURES.get('ENABLE_STUDENT_BADGE_DISPLAY_COURSEWARE', False):
+        <hr />
+        <div id="badges">
+        </div>
       %endif
 
       <ol class="chapters">

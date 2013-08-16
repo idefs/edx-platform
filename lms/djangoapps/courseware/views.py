@@ -700,13 +700,6 @@ def progress(request, course_id, student_id=None):
                'student': student,
                }
 
-    # Add badge data if enabled
-    if settings.MITX_FEATURES.get('ENABLE_STUDENT_BADGE_DISPLAY_COURSEWARE', False):
-        context.update({
-            'badge_data': make_badge_data(request, course),
-            'badges_enabled': True,
-        })
-
     return render_to_response('courseware/progress.html', context)
 
 

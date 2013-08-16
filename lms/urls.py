@@ -356,7 +356,6 @@ if settings.COURSEWARE_ENABLED and settings.MITX_FEATURES.get('ENABLE_INSTRUCTOR
             include('instructor.views.api_urls'))
     )
 
-
 if settings.ENABLE_JASMINE:
     urlpatterns += (url(r'^_jasmine/', include('django_jasmine.urls')),)
 
@@ -450,12 +449,6 @@ if settings.MITX_FEATURES.get('ENABLE_HINTER_INSTRUCTOR_VIEW'):
 if settings.MITX_FEATURES.get('AUTOMATIC_AUTH_FOR_TESTING'):
     urlpatterns += (
         url(r'^auto_auth$', 'student.views.auto_auth'),
-    )
-
-#Prototype page which displays to a student all badges they have earned.
-if settings.MITX_FEATURES.get('ENABLE_STUDENT_BADGE_DISPLAY_DASHBOARD', False):
-    urlpatterns += (
-        url(r'^badges_profile$', 'student.views.badges_profile', name="badges_profile"),
     )
 
 urlpatterns = patterns(*urlpatterns)
