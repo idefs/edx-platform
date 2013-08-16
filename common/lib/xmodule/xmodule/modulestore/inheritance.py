@@ -74,12 +74,7 @@ class InheritanceKeyValueStore(KeyValueStore):
         self._inherited_settings = dictvalue
 
     def get(self, key):
-        if key.field_name in self._fields:
-            return self._fields[key.field_name]
-        elif key.field_name in self.inherited_settings:
-            return self.inherited_settings[key.field_name]
-        else:
-            raise KeyError()
+        return self._fields[key.field_name]
 
     def set(self, key, value):
         # xml backed courses are read-only, but they do have some computed fields
@@ -91,3 +86,11 @@ class InheritanceKeyValueStore(KeyValueStore):
     def has(self, key):
         return key.field_name in self._fields
 
+    def default(self, key):
+        """
+        Check to see if the default should be from inheritance rather than from the field's global default
+        """
+        if key.field_name in self.inherited_settings:
+            return self.inherited_settings[key.field_name]
+        else:
+            raise KeyError()
