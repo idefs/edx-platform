@@ -31,7 +31,6 @@ function (VideoPlayer) {
     return function (state, element) {
         _makeFunctionsPublic(state);
         _initialize(state, element);
-        _renderElements(state);
     };
 
     // ***************************************************************
@@ -99,16 +98,26 @@ function (VideoPlayer) {
         if (!(_parseYouTubeIDs(state))) {
             // If we do not have YouTube ID's, try parsing HTML5 video sources.
             _prepareHTML5Video(state);
+            _setConfigurations(state);
+            _renderElements(state);
+        } else {
+            _checkYoutubeExistence(state)
+                .always(function(json, status) {
+                    var err = json.error ||
+                                (status !== "success" && status !== "notmodified");
+
+                    if (err){
+                        // When the youtube link doesn't work for any reason
+                        // (for example, the great firewall in china) any
+                        // alternate sources should automatically play.
+                        console.log("Problems with connecting to YouTube.");
+                        _prepareHTML5Video(state);
+                    }
+
+                    _setConfigurations(state);
+                    _renderElements(state);
+                });
         }
-
-        _configureCaptions(state);
-        _setPlayerMode(state);
-
-        // Possible value are: 'visible', 'hiding', and 'invisible'.
-        state.controlState = 'visible';
-        state.controlHideTimeout = null;
-        state.captionState = 'visible';
-        state.captionHideTimeout = null;
     }
 
     // function _renderElements(state)
@@ -226,6 +235,29 @@ function (VideoPlayer) {
         };
 
         state.setSpeed($.cookie('video_speed'));
+    }
+
+    function _setConfigurations(state) {
+        _configureCaptions(state);
+        _setPlayerMode(state);
+
+        // Possible value are: 'visible', 'hiding', and 'invisible'.
+        state.controlState = 'visible';
+        state.controlHideTimeout = null;
+        state.captionState = 'visible';
+        state.captionHideTimeout = null;
+    }
+
+    // Check existence video on Youtube.
+    function _checkYoutubeExistence(state) {
+        var id = state.videos['1.0'] || '',
+            xhr = $.ajax({
+                 url: 'https://gdata.youtube.com/feeds/api/videos/' + id + '?v=2&alt=jsonc',
+                 timeout: 500,
+                 dataType: 'jsonp'
+            });
+
+        return xhr;
     }
 
     // ***************************************************************
