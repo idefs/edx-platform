@@ -244,7 +244,7 @@
             <div class="field required checkbox" id="field-tos">
               <input id="tos-yes" type="checkbox" name="terms_of_service" value="true" required aria-required="true" />
               <label for="tos-yes">${_('I agree to the {link_start}Terms of Service{link_end}').format(
-                link_start='<a href="{url}" class="new-vp">'.format(url=marketing_link('TOS')),
+                link_start='<a href="{url}" class="new-vp">'.format(url='http://www.codecoalition.com/tos'),
                 link_end='</a>')}</label>
             </div>
 
@@ -252,15 +252,8 @@
 
             <div class="field required checkbox" id="field-honorcode">
               <input id="honorcode-yes" type="checkbox" name="honor_code" value="true" />
-              <%
-                ## TODO: provide a better way to override these links
-                if self.stanford_theme_enabled():
-                  honor_code_path = marketing_link('TOS') + "#honor"
-                else:
-                  honor_code_path = marketing_link('HONOR')
-              %>
               <label for="honorcode-yes">${_('I agree to the {link_start}Honor Code{link_end}').format(
-                link_start='<a href="{url}" class="new-vp">'.format(url=honor_code_path),
+                link_start='<a href="{url}" class="new-vp">'.format(url='http://www.codecoalition.com/honor'),
                 link_end='</a>')}</label>
             </div>
           </li>
@@ -308,7 +301,7 @@
     <div class="cta cta-nextsteps">
       <h3>${_("Next Steps")}</h3>
       % if self.stanford_theme_enabled():
-        <p>${_("You will receive an activation email.  You must click on the activation link to complete the process.  Don't see the email?  Check your spam folder and mark emails from class.stanford.edu as 'not spam', since you'll want to be able to receive email from your courses.")}</p>
+        <p>${_("You will receive an activation email.  You must click on the activation link to complete the process.  Don't see the email?  Check your spam folder and mark emails from class.codecoalition.com as 'not spam', since you'll want to be able to receive email from your courses.")}</p>
       % else:
       <p>${_("As part of joining {platform_name}, you will receive an activation email.  You must click on the activation link to complete the process.  Don't see the email?  Check your spam folder and mark {platform_name} emails as 'not spam'.  At {platform_name}, we communicate mostly through email.").format(platform_name=settings.PLATFORM_NAME)}</p>
       % endif
