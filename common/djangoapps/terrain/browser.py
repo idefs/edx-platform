@@ -12,6 +12,9 @@ from django.core.management import call_command
 from django.conf import settings
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from requests import put
+from base64 import encodestring
+from json import dumps
 
 # Let the LMS and CMS do their one-time setup
 # For example, setting up mongo caches
@@ -42,27 +45,32 @@ LOGGER.info("Loading the lettuce acceptance testing terrain file...")
 
 MAX_VALID_BROWSER_ATTEMPTS = 20
 
-# https://gist.github.com/santiycr/1644439
-import requests
-import base64
-try:
-    import json
-except ImportError:
-    import simplejson as json
+
+def get_username_and_key():
+    """
+    Returns the Sauce Labs username and access ID as set by environment variables
+    """
+    return {"username": settings.SAUCE.get('USERNAME'), "access-key": settings.SAUCE.get('ACCESS_ID')}
 
 
 def set_job_status(jobid, passed=True):
-    body_content = json.dumps({"passed": passed})
+    """
+    Sets the job status on sauce labs
+    """
+    body_content = dumps({"passed": passed})
     config = get_username_and_key()
-    base64string = base64.encodestring('{}:{}'.format(config['username'], config['access-key']))[:-1]
-    result = requests.put('http://saucelabs.com/rest/v1/{}/jobs/{}'.format(config['username'], world.jobid),
+    base64string = encodestring('{}:{}'.format(config['username'], config['access-key']))[:-1]
+    result = put('http://saucelabs.com/rest/v1/{}/jobs/{}'.format(config['username'], world.jobid),
         data=body_content,
         headers={"Authorization": "Basic {}".format(base64string)})
     return result.status_code == 200
 
 
 def make_desired_capabilities():
-    desired_capabilities =  settings.SAUCE.get('BROWSER', DesiredCapabilities.CHROME)
+    """
+    Returns a DesiredCapabilities object corresponding to the environment sauce parameters
+    """
+    desired_capabilities = settings.SAUCE.get('BROWSER', DesiredCapabilities.CHROME)
     desired_capabilities['platform'] = settings.SAUCE.get('PLATFORM')
     desired_capabilities['version'] = settings.SAUCE.get('VERSION')
     desired_capabilities['device-type'] = settings.SAUCE.get('DEVICE')
@@ -77,16 +85,12 @@ def make_desired_capabilities():
     return desired_capabilities
 
 
-def get_username_and_key():
-    return {"username": settings.SAUCE.get('USERNAME'), "access-key": settings.SAUCE.get('ACCESS_ID')}
-
-
 @before.harvest
 def initial_setup(server):
     """
     Launch the browser once before executing the tests.
     """
-    world.absorb(settings.SAUCE.get('SAUCE_ENABLED'),'SAUCE_ENABLED')
+    world.absorb(settings.SAUCE.get('SAUCE_ENABLED'), 'SAUCE_ENABLED')
     browser_driver = getattr(settings, 'LETTUCE_BROWSER', 'chrome')
 
     # There is an issue with ChromeDriver2 r195627 on Ubuntu
