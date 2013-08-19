@@ -878,8 +878,8 @@ class NumericalResponse(LoncapaResponse):
         with this problem's tolerance.
         """
         return compare_with_tolerance(
-            evaluator(dict(), dict(), a),
-            evaluator(dict(), dict(), b),
+            evaluator({}, {}, a),
+            evaluator({}, {}, b),
             self.tolerance
         )
 
