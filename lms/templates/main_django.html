@@ -20,6 +20,8 @@
   {% block headextra %}{% endblock %}
   {% render_block "css" %}
 
+  <!-- FIXME: Hack to get the codecoalition footer on pages based on Django templates -->
+  <link rel="stylesheet" href="/static/themes/stanford/css/vendor/su-identity.css" />
 
   <!--[if lt IE 9]>
   <script src="${static.url('js/html5shiv.js')}"></script>
@@ -35,7 +37,29 @@
     {% block bodyextra %}{% endblock %}
   </section>
 
-  {% include "footer.html" %}
+  <!-- FIXME: Hack to get the codecoalition footer on pages based on Django templates -->
+  <div id="su-footer">
+    <div class="su-container">
+      <div class="su-row">
+        <div id="su-footer-logo" class="span2">
+          <a href="https://www.codecoalition.com/">
+            <img src="/static/themes/stanford/images/codecoalition-logo_76x49.png" alt="Code Coalition" width="76" height="49"/>
+          </a>
+        </div>
+        <div id="su-footer-text" class="span10">
+          <ul>
+            <li class="home"><a href="https://www.codecoalition.com/">Code Coalition Home</a></li>
+          </ul>
+          <div class="clear"></div>
+          <p class="copyright vcard">&copy; <span class="fn org">Code Coalition Inc</span></p>
+          <div class="references">
+            <span>Built on <a href="http://code.edx.org">OpenEdX</a>.</span>
+          </div>
+        </div>
+        <div style="clear: both;"></div>
+      </div>
+    </div>
+  </div>
 
   {% compressed_js 'application' %}
   {% compressed_js 'module-js' %}
