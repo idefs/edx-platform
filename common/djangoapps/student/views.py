@@ -2,6 +2,7 @@ import datetime
 import feedparser
 import json
 import logging
+import pymongo
 import random
 import re
 import string       # pylint: disable=W0402
@@ -609,6 +610,11 @@ def create_account(request, post_override=None):
             js['field'] = a
             return HttpResponse(json.dumps(js))
 
+    if settings.MITX_FEATURES.get('CREATE_ACCOUNT_EXTRA_CHECKS'):
+        result = create_account_extra_checks(post_vars, js)
+        if result is not None:
+            return HttpResponse(json.dumps(result))
+
     if post_vars.get('honor_code', 'false') != u'true':
         js['value'] = _("To enroll, you must follow the honor code.").format(field=a)
         js['field'] = 'honor_code'
@@ -745,6 +751,33 @@ def create_account(request, post_override=None):
                         secure=None,
                         httponly=None)
     return response
+
+
+def create_account_extra_checks(post_vars, js):
+    """
+    Extra checks for the account
+
+    - Checks that the user has already paid.
+    """
+    db = get_account_check_db()
+    email = post_vars.get('email')
+
+    controls_dict = db.users.find({ 'email': email })
+    if controls_dict.count() < 1:
+        js['value'] = _("You have not yet enrolled for the Code Coalition course. Please enroll <a href='https://www.codecoalition.com/'>here</a>.")
+        js['field'] = 'email'
+        return js
+
+def get_account_check_db():
+    """
+    Returns db connection to extra checks db (mongo)
+    """
+    connect_dict = pymongo.uri_parser.parse_uri(settings.ACCOUNT_CHECK_DB_URI)
+    connection = pymongo.Connection(*connect_dict['nodelist'][0])
+    db = connection[connect_dict['database']]
+    if connect_dict['username'] and connect_dict['password']:
+        db.authenticate(connect_dict['username'], connect_dict['password'])
+    return db
 
 
 def exam_registration_info(user, course):

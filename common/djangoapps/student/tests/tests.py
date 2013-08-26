@@ -22,7 +22,7 @@ from mock import Mock, patch
 from textwrap import dedent
 
 from student.models import unique_id_for_user, CourseEnrollment
-from student.views import process_survey_link, _cert_info, password_reset, password_reset_confirm_wrapper
+from student.views import process_survey_link, _cert_info, password_reset, password_reset_confirm_wrapper, create_account
 from student.tests.factories import UserFactory
 from student.tests.test_email import mock_render_to_string
 COURSE_1 = 'edX/toy/2012_Fall'
@@ -332,3 +332,72 @@ class EnrollInCourseTest(TestCase):
         # for that user/course_id combination
         CourseEnrollment.enroll(user, course_id)
         self.assertTrue(CourseEnrollment.is_enrolled(user, course_id))
+
+class RegistrationTests(TestCase):
+    """ Tests related to registration of a new user
+    """
+    request_factory = RequestFactory()
+
+    def setUp(self):
+        settings.MITX_FEATURES['CREATE_ACCOUNT_EXTRA_CHECKS'] = True
+        settings.ACCOUNT_CHECK_DB_URI = 'mongodb://test_user:test_password@test_host:123/test_db'
+
+        self.create_account_postdata = {
+                "username": ["testj"], 
+                "name": ["test"], 
+                "gender": [""], 
+                "year_of_birth": [""], 
+                "level_of_education": [""], 
+                "goals": [""], 
+                "honor_code": ["true"], 
+                "terms_of_service": [""], 
+                "password": "pass", 
+                "mailing_address": [""], 
+                "email": ["john@example.com"]}
+        
+    def tearDown(self):
+        settings.MITX_FEATURES['CREATE_ACCOUNT_EXTRA_CHECKS'] = False
+        settings.ACCOUNT_CHECK_DB_URI = None
+
+    @patch('student.views.pymongo.Connection')
+    def test_user_create_extra_checks(self, mock_connection):
+        mock_db = Mock()
+        def mock_connection_effect(host, port):
+            self.assertEqual(host, 'test_host')
+            self.assertEqual(port, 123)
+            return { "test_db": mock_db }
+        mock_connection.side_effect = mock_connection_effect
+
+        def mock_db_authenticate_effect(username, password):
+            self.assertEqual(username, 'test_user')
+            self.assertEqual(password, 'test_password')
+        mock_db.authenticate.side_effect = mock_db_authenticate_effect
+
+        mock_find_result = Mock()
+        def mock_db_users_find_effect(query):
+            self.assertEqual(query['email'], 'john@example.com')
+            return mock_find_result
+        mock_db.users.find.side_effect = mock_db_users_find_effect
+
+        # Prepare request
+        create_request = self.request_factory.post('/create_account', self.create_account_postdata)
+        create_request.session = {}
+
+        # Authorized - Query on db finds matching results
+        mock_find_result.count.return_value = 1
+        
+        create_response = create_account(create_request)
+        self.assertEquals(create_response.status_code, 200)
+        response_obj = json.loads(create_response.content)
+        self.assertEqual(response_obj['field'], 'terms_of_service')
+
+        # Unauthorized - Query on db doesn't find matching result
+        mock_find_result.count.return_value = 0
+
+        create_response = create_account(create_request)
+        self.assertEquals(create_response.status_code, 200)
+        response_obj = json.loads(create_response.content)
+        self.assertEqual(response_obj['field'], 'email')
+        self.assertEqual(response_obj['value'], "You have not yet enrolled for the Code Coalition course. Please enroll <a href='https://www.codecoalition.com/'>here</a>.")
+        self.assertEqual(response_obj['success'], False)
+
