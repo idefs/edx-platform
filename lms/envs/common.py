@@ -169,6 +169,9 @@ MITX_FEATURES = {
 
     # Toggle storing detailed billing information
     'STORE_BILLING_INFO': False,
+
+    # Require payment to allow enrollment in courses
+    'REQUIRE_PAYMENT_TO_ENROLL': False,
 }
 
 # Used for A/B testing
@@ -891,3 +894,12 @@ if MITX_FEATURES.get('AUTH_USE_CAS'):
     )
     INSTALLED_APPS += ('django_cas',)
     MIDDLEWARE_CLASSES += ('django_cas.middleware.CASMiddleware',)
+
+#################### Require payment to enroll ########################
+
+if MITX_FEATURES.get('REQUIRE_PAYMENT_TO_ENROLL'):
+    REQUIRE_PAYMENT_TO_ENROLL_PRICE = 12500
+    REQUIRE_PAYMENT_TO_ENROLL_CURRENCY = 'usd'
+
+    STRIPE_KEY_PUBLIC = 'pk_test_W0ylESS65cR7UpewUNuI2k6o'
+    STRIPE_KEY_SECRET = 'sk_test_TddMoykYgyC7rfxs13USIi0Y'

@@ -254,3 +254,11 @@ BROKER_URL = "{0}://{1}:{2}@{3}/{4}".format(CELERY_BROKER_TRANSPORT,
                                             CELERY_BROKER_PASSWORD,
                                             CELERY_BROKER_HOSTNAME,
                                             CELERY_BROKER_VHOST)
+
+# Require payment to enroll
+REQUIRE_PAYMENT_TO_ENROLL_PRICE = ENV_TOKENS.get("REQUIRE_PAYMENT_TO_ENROLL_PRICE", 12500)
+REQUIRE_PAYMENT_TO_ENROLL_CURRENCY = ENV_TOKENS.get("REQUIRE_PAYMENT_TO_ENROLL_CURRENCY", "usd")
+
+STRIPE_KEY_PUBLIC = AUTH_TOKENS.get("STRIPE_KEY_PUBLIC", "")
+STRIPE_KEY_SECRET = AUTH_TOKENS.get("STRIPE_KEY_SECRET", "")
+
