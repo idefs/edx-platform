@@ -1,5 +1,6 @@
 <%! from django.utils.translation import ugettext as _ %>
 <%!
+  from django.conf import settings
   from django.core.urlresolvers import reverse
   from courseware.courses import course_image_url, get_course_about_section
   from courseware.access import has_access
@@ -18,16 +19,46 @@
 
 <%block name="js_extra">
 
+  <script type="text/javascript" src="https://checkout.stripe.com/v2/checkout.js"></script>
+
   <script type="text/javascript">
   (function() {
-    var query = $.deparam.querystring(),
+   var query = $.deparam.querystring(),
 
-        showEnrollmentMsg = function(enrollmentMsg) {
-          $('#register_error').html(enrollmentMsg).css("display", "block");
+        addTokenToForm = function(res) {
+          var $input = $('<input type="hidden" id="payment_token" name="payment_token" />').val(res.id);
+          $('#class_enroll_form').append($input).submit();
+        },
+
+        showPaymentModal = function() {
+          StripeCheckout.open({
+            key:         "${settings.STRIPE_KEY_PUBLIC}",
+            address:     false,
+            amount:      ${settings.REQUIRE_PAYMENT_TO_ENROLL_PRICE},
+            currency:    "${settings.REQUIRE_PAYMENT_TO_ENROLL_CURRENCY}",
+            name:        "Online Course",
+            description: "Enrollment for one session",
+            panelLabel:  "Pay",
+            token:       addTokenToForm
+          });
+        },
+
+        handleEnrollmentMsg = function(enrollmentMsg) {
+          console.log('X'+enrollmentMsg+'X');
+          if(enrollmentMsg === 'Payment required') {
+            showPaymentModal();
+          } else if(enrollmentMsg === 'Payment denied') {
+            $('#register_error').html(enrollmentMsg).css("display", "block");
+            $('#payment_token').remove();
+          } else {
+            $('#register_error').html(enrollmentMsg).css("display", "block");
+          }
         };
 
+    // Main //////////
+
     if(query.enrollment_msg) {
-      showEnrollmentMsg(query.enrollment_msg);
+      handleEnrollmentMsg(query.enrollment_msg);
     }
 
     $(".register").click(function(event) {
@@ -47,7 +78,7 @@
                                   'You may need to log out and re-login with a university account, such as WebAuth'
         ).css("display", "block");
       } else {
-        showEnrollmentMsg(xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.');
+        handleEnrollmentMsg(xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.');
       }
     });
 
@@ -64,7 +95,7 @@
       } else if (xhr.status == 403) {
         location.href = "${reverse('register_user')}?course_id=${course.id}&enrollment_action=enroll";
       } else {
-        showEnrollmentMsg(xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.');
+        handleEnrollmentMsg(xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.');
       }
     });
 

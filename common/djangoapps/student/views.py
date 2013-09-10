@@ -7,6 +7,7 @@ import logging
 import random
 import re
 import string       # pylint: disable=W0402
+import stripe
 import urllib
 import uuid
 import time
@@ -385,6 +386,14 @@ def change_enrollment(request):
         if not has_access(user, course, 'enroll'):
             return HttpResponseBadRequest(_("Enrollment is closed"))
 
+        if settings.MITX_FEATURES.get('REQUIRE_PAYMENT_TO_ENROLL') and \
+                not has_access(user, course, 'staff'):
+            payment_token = request.POST.get('payment_token')
+            if not payment_token:
+                return HttpResponseBadRequest("Payment required")
+            if not pay_with_token(user, course_id, payment_token):
+                return HttpResponseBadRequest("Payment denied")
+
         # If this course is available in multiple modes, redirect them to a page
         # where they can choose which mode they want.
         available_modes = CourseMode.modes_for_course(course_id)
@@ -418,6 +427,22 @@ def change_enrollment(request):
             return HttpResponseBadRequest(_("You are not enrolled in this course"))
     else:
         return HttpResponseBadRequest(_("Enrollment action is invalid"))
+
+def pay_with_token(user, course_id, token):
+    if not token:
+        return False
+
+    stripe.api_key = settings.STRIPE_KEY_SECRET
+    try:
+        stripe.Charge.create(
+            amount=settings.REQUIRE_PAYMENT_TO_ENROLL_PRICE,
+            currency=settings.REQUIRE_PAYMENT_TO_ENROLL_CURRENCY,
+            card=token,
+            description="{0},{1}".format(user.email, course_id)
+        )
+        return True
+    except stripe.CardError:
+        return False
 
 @ensure_csrf_cookie
 def accounts_login(request, error=""):
