@@ -20,6 +20,16 @@
 
   <script type="text/javascript">
   (function() {
+    var query = $.deparam.querystring(),
+
+        showEnrollmentMsg = function(enrollmentMsg) {
+          $('#register_error').html(enrollmentMsg).css("display", "block");
+        };
+
+    if(query.enrollment_msg) {
+      showEnrollmentMsg(query.enrollment_msg);
+    }
+
     $(".register").click(function(event) {
       $("#class_enroll_form").submit();
       event.preventDefault();
@@ -37,9 +47,7 @@
                                   'You may need to log out and re-login with a university account, such as WebAuth'
         ).css("display", "block");
       } else {
-        $('#register_error').html(
-            (xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.')
-        ).css("display", "block");
+        showEnrollmentMsg(xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.');
       }
     });
 
@@ -56,9 +64,7 @@
       } else if (xhr.status == 403) {
         location.href = "${reverse('register_user')}?course_id=${course.id}&enrollment_action=enroll";
       } else {
-        $('#register_error').html(
-            (xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.')
-        ).css("display", "block");
+        showEnrollmentMsg(xhr.responseText ? xhr.responseText : 'An error occurred. Please try again later.');
       }
     });
 

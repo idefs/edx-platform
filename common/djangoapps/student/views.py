@@ -333,7 +333,13 @@ def try_change_enrollment(request):
                 )
             )
             if enrollment_response.content != '':
-                return enrollment_response.content
+                course_id = request.POST.get("course_id")
+                if course_id:
+                    redirect_url = reverse('about_course', kwargs={'course_id': course_id})
+                else:
+                    redirect_url = ''
+                params = urllib.urlencode({'enrollment_msg': enrollment_response.content})
+                return '{0}?{1}'.format(redirect_url, params)
         except Exception, e:
             log.exception("Exception automatically enrolling after login: {0}".format(str(e)))
 
