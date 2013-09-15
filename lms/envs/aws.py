@@ -295,6 +295,10 @@ BROKER_URL = "{0}://{1}:{2}@{3}/{4}".format(CELERY_BROKER_TRANSPORT,
                                             CELERY_BROKER_HOSTNAME,
                                             CELERY_BROKER_VHOST)
 
+# Stripe
+STRIPE_KEY_PUBLIC = AUTH_TOKENS.get("STRIPE_KEY_PUBLIC", "")
+STRIPE_KEY_SECRET = AUTH_TOKENS.get("STRIPE_KEY_SECRET", "")
+
 # Event tracking
 TRACKING_BACKENDS.update(AUTH_TOKENS.get("TRACKING_BACKENDS", {}))
 
