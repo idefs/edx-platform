@@ -432,6 +432,12 @@ def change_enrollment(request):
 
         current_mode = available_modes[0]
 
+        if 'pay_with_coupon' in CourseMode.modes_for_course_dict(course_id) and \
+                not has_access(user, course, 'staff'):
+            return HttpResponse(
+                reverse("pay_with_coupon", kwargs={'course_id': course_id})
+            )
+
         org, course_num, run = course_id.split("/")
         dog_stats_api.increment(
             "common.student.enrollment",
