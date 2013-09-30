@@ -409,6 +409,9 @@ if settings.MITX_FEATURES.get('AUTH_USE_OPENID_PROVIDER'):
 if settings.MITX_FEATURES.get('ENABLE_PEARSON_LOGIN', False):
     urlpatterns += url(r'^testcenter/login$', 'external_auth.views.test_center_login'),
 
+if settings.MITX_FEATURES.get('ENABLE_AUTO_LOGIN_URLS', False):
+    urlpatterns += url(r'^loginurl/', include('loginurl.urls')),
+
 if settings.MITX_FEATURES.get('ENABLE_LMS_MIGRATION'):
     urlpatterns += (
         url(r'^migrate/modules$', 'lms_migration.migrate.manage_modulestores'),

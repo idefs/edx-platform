@@ -97,6 +97,9 @@ MITX_FEATURES = {
     'AUTH_USE_SHIB': False,
     'AUTH_USE_CAS': False,
 
+    # allow to generate auto-login URLs
+    'ENABLE_AUTO_LOGIN_URLS': False,
+
     # This flag disables the requirement of having to agree to the TOS for users registering
     # with Shib.  Feature was requested by Stanford's office of general counsel
     'SHIB_DISABLE_TOS': False,
@@ -254,6 +257,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 
 # use the ratelimit backend to prevent brute force attacks
 AUTHENTICATION_BACKENDS = (
+    'loginurl.backends.LoginUrlBackend',
     'ratelimitbackend.backends.RateLimitModelBackend',
 )
 STUDENT_FILEUPLOAD_MAX_SIZE = 4 * 1000 * 1000  # 4 MB
@@ -789,6 +793,9 @@ INSTALLED_APPS = (
     # External auth (OpenID, shib)
     'external_auth',
     'django_openid_auth',
+
+    # Generation of auto-login links
+    'loginurl',
 
     #For the wiki
     'wiki',  # The new django-wiki from benjaoming
