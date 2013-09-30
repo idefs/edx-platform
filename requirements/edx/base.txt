@@ -111,3 +111,6 @@ git+https://github.com/mitocw/django-cas.git
 
 # Stripe
 stripe==1.9.4
+
+# Generate autologin urls
+django-loginurl==0.2
