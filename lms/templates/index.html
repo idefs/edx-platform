@@ -5,6 +5,211 @@
 <%inherit file="main.html" />
 <%namespace name='static' file='static_content.html'/>
 
+% if True:
+
+<%block name="js_extra">
+   <script type="text/javascript">
+      $(function() {
+        var view_name = 'index';
+        $('body').addClass(view_name);
+      });
+   </script>
+</%block>
+
+<div class="w-container hero-text">
+  <h2>A trade school for the 21st century.</h2>
+  <h1>Get job ready</h1>
+</div>
+
+<div class="section" id="page-nav-services">
+  <div class="w-container service-columns">
+    <div class="w-row">
+      <div class="w-col w-col-4 services">
+        <img class="icon" src="${static.url('themes/stanford/images/CC_LearnIcon.png')}" height="95" alt="CC_LearnIcon.png">
+        <h3>Learn</h3>
+        <p>Watch short and easy to digest videos, read teacher notes, and check out provided supplemental material. You can always move at your own pace in our courses.</p>
+      </div>
+      <div class="w-col w-col-4 services">
+        <img class="icon" src="${static.url('themes/stanford/images/CC_PracticeIcon.png')}" height="95" alt="CC_PracticeIcon.png">
+        <h3>Practice</h3>
+        <p>Complete small tasks to test mastery on specific concepts. Having problems? Work with teachers and students in the discussion forums to get the help you need.</p>
+      </div>
+      <div class="w-col w-col-4 services">
+        <img class="icon" src="${static.url('themes/stanford/images/CC_Build.png')}" height="95" alt="CC_Build.png">
+        <h3>Build</h3>
+        <p>Apply what you learn by building actual products! Use your new skills on an open source project. Add it all to your portfolio and land a sweet job!</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="section dark web" id="page-nav-portfolio">
+  <div class="w-container">
+    <div class="w-row">
+      <div class="w-col w-col-8">
+        <img class="image" src="${static.url('themes/stanford/images/CC_HiringPartners.png')}" alt="CC_HiringPartners.png">
+      </div>
+      <div class="w-col w-col-4 w-clearfix portfolio-text">
+        <h3>Connect With <br>Hiring Partners</h3>
+        <p class="hiringpartners">Portfolios from our students will be submitted to our hiring partners. Not only do we teach you the skills you need to thrive in today's job market, we also connect you with the right companies.</p><a class="button" href="mailto:john@codecoalition.com?subject=potential%20hiring%20partner">Hiring? become a hiring partner</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="section dark">
+  <div class="w-container">
+    <h3 class="center-tittle">Our courses</h3>
+  </div>
+  <div class="w-container gallery">
+    <div class="w-row coursegallery">
+      <div class="w-col w-col-2 class-column">
+        <a class="w-inline-block course-link-block" href="/courses/CodeCoalition/iOS101/2013_fall/about" target="_blank">
+          <img class="oneday-ios-image" src="${static.url('themes/stanford/images/CC_1DayiOS.png')}" alt="CC_1DayiOS.png">
+          <h1 class="courseh1">1 Day iOS</h1>
+        </a>
+      </div>
+      <div class="w-col w-col-2">
+        <a class="w-inline-block course-link-block" href="/courses/CodeCoalition/iOS102/2013_fall/about" target="_blank">
+          <img class="_3month-ios-image" src="${static.url('themes/stanford/images/CC_3MonthiOS.png')}" alt="CC_3MonthiOS.png">
+          <h1 class="courseh1">3 Month iOS Beginner</h1>
+        </a>
+      </div>
+      <div class="w-col w-col-2">
+        <a class="w-inline-block course-link-block" href="#">
+          <img class="adv-ios-image" src="${static.url('themes/stanford/images/CC_3MonthADViOS.png')}" alt="CC_3MonthADViOS.png">
+          <h1 class="courseh1">3 Month iOS Advanced</h1>
+        </a>
+      </div>
+      <div class="w-col w-col-2">
+        <a class="w-inline-block course-link-block" href="#">
+          <img class="startuplaw-image" src="${static.url('themes/stanford/images/CC_1WeekLaw.png')}" alt="CC_1WeekLaw.png">
+          <h1 class="courseh1">7 Day Startup Law</h1>
+        </a>
+      </div>
+      <div class="w-col w-col-2">
+        <a class="w-inline-block course-link-block" href="#">
+          <img class="htmlcss-tumblr-image" src="${static.url('themes/stanford/images/CC_1WeekHTMLCSS.png')}" alt="CC_1WeekHTMLCSS.png">
+          <h1 class="courseh1">7 Day HTML/CSS with Tumblr</h1>
+        </a>
+      </div>
+      <div class="w-col w-col-2 dead-column"></div>
+    </div>
+  </div>
+</div>
+<div class="section dark section_platform">
+  <div class="w-container">
+    <h3 class="center-tittle">The learning platform</h3>
+  </div>
+  <div class="w-container gallery">
+    <div class="w-row">
+      <div class="w-col w-col-6">
+        <div class="w-clearfix sample-content-div">
+          <h4>Coming Soon: New Courses!</h4>
+          <p class="sample-content-p">We're creating new content every day. Sign-up for our newsletter and we'll notify you about upcoming courses. We'll even throw in some weekly tips!</p>
+          <input class="w-input newsletter-input-field" type="text" placeholder="Enter Email Address"
+          name="newsletter-input" required="required" data-name="newsletter-input"></input><a class="button newsletter">Submit</a>
+        </div>
+      </div>
+      <div class="w-col w-col-6">
+        <div class="w-embed w-iframe">
+          <iframe src="//player.vimeo.com/video/73036593" width="500" height="281" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="section bg-image" id="page-nav-about">
+  <div class="w-container about-text">
+    <h1 class="heading">FAQs</h1>
+  </div>
+</div>
+<div class="section">
+  <div class="w-container">
+    <div class="w-row faq-row">
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">What is Code Coalition?</h3>
+          <p class="team-text">Code Coalition is an online learning platform that strives to give students practical technology and startup skills. Students will receive short and easy to digest videos daily and will be able to immediately apply concepts learned on assigned
+            projects. Although everything can be learned individually, learning to code is much easier with a supportive environment. Students will be able to interact, ask questions, and even collaborate on projects in our online community. After completing
+            our courses, students are connected with our hiring partners so they can get into the thriving technology field.</p>
+        </div>
+      </div>
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">WHY ARE YOU DOING THIS?</h3>
+          <p class="team-text">Unfortunately, the percentage of high schools offering computer science classes is decreasing even though more and more available jobs are technical. We believe that anyone can become a software developer with the right time and environment,
+            and the job itself is fun and rewarding. We all enjoy the teaching process and after teaching students and witnessing various success stories, we decided to pursue the endeavor full time.</p>
+        </div>
+      </div>
+    </div>
+    <div class="w-row row">
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">HOW DO I INTERACT WITH TEACHERS AND CLASSMATES?</h3>
+          <p class="team-text">Students will be able to post questions, participate in discussions, and go over projects in forums. Our teachers will be active in the course forums - from answering questions on those beginner bugs to providing advanced tips and techniques
+            to solve problems. We will also create videos walking you through the final coded out projects and open up discussion around key ideas.</p>
+        </div>
+      </div>
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">HOW WILL I BE GRADED?</h3>
+          <p class="team-text">We don’t assign grades. The goal of Code Coalition is to teach through a series of projects. You’ll know if you completed the project because the app will work as expected. We will also provide completed examples of the apps fully coded and
+            documented by our team. You can use your apps to build your portfolio, which is the most important thing you can do to get a job as a developer.</p>
+        </div>
+      </div>
+    </div>
+    <div class="w-row row">
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">I heard you can learn coding by yourself. Why Code Coalition?</h3>
+          <p class="team-text">You can, and there are some great free resources online. However, many students can struggle finding where to begin and what they should initially pick up. We want students to learn efficiently and we provide a track so that they can focus
+            on how to build - and not on finding where or what to learn.
+            <br>
+            <br>Furthermore, we think that having a community around you where you can ask questions with like-minded people will help with those beginner bugs that just don’t seem to go away, and will allow you to simply get back to coding your app.</p>
+        </div>
+      </div>
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">Can I move through the courses at my own pace?</h3>
+          <p class="team-text">All of our courses are self paced. You can start and finish at any time. The course titles, like 3 Month iOS Beginner, refers to the amount of material there is in the course. We believe that a beginner will take three months to get through
+            that course. Of course advanced students can jump around to more challenging material, and beginners can review as often as they need.</p>
+        </div>
+      </div>
+    </div>
+    <div class="w-row row">
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">Will I get a certificate at the end of  courses?</h3>
+          <p class="team-text">We will not provide certificates for completing courses because that sways from our belief that credential is no longer the metric used for getting a job. Courses will be about building your portfolio because that’s what really matters these
+            days.</p>
+        </div>
+      </div>
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">ARE YOU QUALIFIED TO TEACH PROGRAMMING?</h3>
+          <p class="team-text">We have thousands of hours of development experience between us. In the teaching space we have taught hundreds of students through workshops, boot camps, classes, online videos, apprentice programs and one on one tutoring. As a result, we
+            have explored different teaching styles and methods. This has allowed us to test various teaching strategies, and use the one we find most effective.</p>
+        </div>
+      </div>
+    </div>
+    <div class="w-row row">
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">I HAVE NOT TAKEN MUCH MATH IN SCHOOL. CAN I BECOME A PROGRAMMER?</h3>
+          <p class="team-text">Absolutely. Programming involves very little complex math spare for some computationally intensive apps (graphics heavy games for example). Basic knowledge of algebra is all you’ll need.</p>
+        </div>
+      </div>
+      <div class="w-col w-col-6 w-clearfix faqcolumn">
+        <div class="info-wrapper">
+          <h3 class="name">DO I NEED TO LIVE IN THE UNITED STATES TO TAKE THeSe COURSEs?</h3>
+          <p class="team-text">No. A capable computer and an internet connection is all you need.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+% else:
+
 <section class="home">
   <header>
     <div class="outer-wrapper">
@@ -192,15 +397,7 @@
   </div>
 </section>
 
-<%block name="js_extra">
-   <script type="text/javascript">
-      $(window).load(function() {
-         if(getParameterByName('next')) {
-              $('#login').trigger("click");
-         }
-      })
-   </script>
-</%block>
+% endif
 
 % if show_signup_immediately is not UNDEFINED:
   ## NOTE: This won't work in production, because anonymous views are cached, so it will
