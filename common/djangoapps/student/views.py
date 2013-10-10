@@ -1,6 +1,8 @@
 """
 Student Views
 """
+from mailchimp.utils import get_connection as mailchimp_get_connection
+
 import datetime
 import json
 import logging
@@ -113,6 +115,17 @@ def index(request, extra_context={}, user=None):
     context.update(extra_context)
     return render_to_response('index.html', context)
 
+def newsletter_subscribe(request):
+    """
+    Allow to register to the newsletter
+    """
+    subscribed = False
+    if request.POST['email']:
+         email_address = request.POST['email']
+         mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_NEWSLETTER_LIST_ID)
+         mc_list.subscribe(email_address, {'EMAIL':email_address})
+         subscribed = True
+    return index(request, extra_context={'newsletter_subscribed': subscribed})
 
 def course_from_id(course_id):
     """Return the CourseDescriptor corresponding to this course_id"""

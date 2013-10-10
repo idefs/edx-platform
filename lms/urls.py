@@ -66,6 +66,11 @@ urlpatterns = ('',  # nopep8
     url(r'^', include('waffle.urls')),
 )
 
+# Newsletter
+urlpatterns += (
+    url(r'^newsletter/subscribe$', 'student.views.newsletter_subscribe', name="newsletter_subscribe"),
+)
+
 # if settings.MITX_FEATURES.get("MULTIPLE_ENROLLMENT_ROLES"):
 urlpatterns += (
     url(r'^verify_student/', include('verify_student.urls')),
