@@ -103,10 +103,22 @@
     <div class="w-row">
       <div class="w-col w-col-6">
         <div class="w-clearfix sample-content-div">
-          <h4>Coming Soon: New Courses!</h4>
-          <p class="sample-content-p">We're creating new content every day. Sign-up for our newsletter and we'll notify you about upcoming courses. We'll even throw in some weekly tips!</p>
-          <input class="w-input newsletter-input-field" type="text" placeholder="Enter Email Address"
-          name="newsletter-input" required="required" data-name="newsletter-input"></input><a class="button newsletter">Submit</a>
+          <form action="${reverse('newsletter_subscribe')}#newsletter" method="post" >
+            <div style="display:none">
+              <input type="hidden" name="csrfmiddlewaretoken" value="${csrf_token}" />
+            </div>
+            <a name="newsletter"></a>
+            <h4>Coming Soon: New Courses!</h4>
+            <p class="sample-content-p">We're creating new content every day. Sign-up for our newsletter and we'll notify you about upcoming courses. We'll even throw in some weekly tips!</p>
+
+            % if not newsletter_subscribed:
+            <input class="w-input newsletter-input-field" type="text" placeholder="Enter Email Address"
+            name="email" required="required" data-name="email"></input>
+            <input type="submit" class="button newsletter" value="Submit" />
+            % else:
+            <p class="sample-content-p"><strong><em>Subscription successful!</em></strong></p>
+            % endif
+          </form>
         </div>
       </div>
       <div class="w-col w-col-6">

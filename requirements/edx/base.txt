@@ -107,3 +107,7 @@ stripe==1.9.4
 
 # Generate autologin urls
 django-loginurl==0.2
+
+# Mailchimp
+django-mailchimp==0.1.30
+
