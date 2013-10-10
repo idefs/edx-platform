@@ -6,6 +6,7 @@
   {% block title %}<title>edX</title>{% endblock %}
 
   <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}" />
+  <link rel="stylesheet" type="text/css" href="{% static "themes/stanford/css/webflow.css" %}">
 
   {% compressed_css 'application' %}
   {% block main_vendor_js %}
@@ -35,28 +36,46 @@
   </section>
 
   <!-- FIXME: Hack to get the codecoalition footer on pages based on Django templates -->
-  <div id="su-footer">
-    <div class="su-container">
-      <div class="su-row">
-        <div id="su-footer-logo" class="span2">
-          <a href="https://www.codecoalition.com/">
-            <img src="/static/themes/stanford/images/codecoalition-logo_76x49.png" alt="Code Coalition" width="76" height="49"/>
-          </a>
-        </div>
-        <div id="su-footer-text" class="span10">
-          <ul>
-            <li class="home"><a href="https://www.codecoalition.com/">Code Coalition Home</a></li>
-          </ul>
-          <div class="clear"></div>
-          <p class="copyright vcard">&copy; <span class="fn org">Code Coalition Inc</span></p>
-          <div class="references">
-            <span>Built on <a href="http://code.edx.org">OpenEdX</a>.</span>
-          </div>
-        </div>
-        <div style="clear: both;"></div>
+  <footer class="footer checkout-footer">
+    <div class="w-container">
+      <div class="social-wrapper">
+        <a class="w-clearfix w-inline-block social-link" href="http://www.twitter.com" target="_blank">
+          <img class="social-wrapper" src="/static/themes/stanford/images/CC_Twitter.png" width="32" alt="CC_Twitter.png">
+        </a>
+        <a class="w-clearfix w-inline-block social-link" href="http://#" target="_blank">
+          <img class="social-wrapper" src="/static/themes/stanford/images/CC_Facebook.png" width="32" alt="CC_Facebook.png">
+        </a>
+        <a class="w-clearfix w-inline-block social-link" href="http://#" target="_blank">
+          <img class="social-wrapper" src="/static/themes/stanford/images/CC_Google.png" width="32" alt="CC_Google.png">
+        </a>
+        <a class="w-clearfix w-inline-block social-link" href="http://www.twitter.com" target="_blank">
+          <img class="social-wrapper" src="/static/themes/stanford/images/CC_Youtube.png" width="32" alt="CC_Youtube.png">
+        </a>
+        <a class="w-clearfix w-inline-block social-link" href="http://#" target="_blank">
+          <img class="social-wrapper" src="/static/themes/stanford/images/CC_Tumblr.png" width="32" alt="CC_Tumblr.png">
+        </a>
       </div>
     </div>
-  </div>
+    <div class="w-container">
+      <div class="w-row">
+        <div class="w-col w-col-8">
+          <div>
+            <img class="bottom-logo" src="/static/themes/stanford/images/codecoalition-logo_200x27.png" alt="codecoalition-logo_200x27.png">
+          </div>
+          <div class="copy-div">
+            <div class="copyright">© 2013 Code Coalition, Inc.</div>
+          </div>
+        </div>
+        <div class="w-col w-col-4">
+          <div class="w-clearfix">
+            <h5>Code Coalition help and information:</h5>
+          </div>
+          <div class="w-clearfix"><a class="contactus-link" href="mailto:info@codecoalition.com">Contact us</a>
+          </div>
+        </div>
+      </div>
+    </div>
+   </footer>
 
   {% compressed_js 'application' %}
   {% compressed_js 'module-js' %}
