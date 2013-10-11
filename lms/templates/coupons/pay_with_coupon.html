@@ -4,12 +4,18 @@
   from django.core.urlresolvers import reverse
 %>
 <%inherit file="../main.html" />
+<%namespace name='static' file='../static_content.html'/>
 
 <%block name="bodyclass">register verification-process step-select-track</%block>
 <%block name="title"><title>${_("Register for {} | Payment").format(course_name)}</title></%block>
 
 <%block name="js_extra">
-<script type="text/javascript" src="https://checkout.stripe.com/v2/checkout.js"></script>
+
+<link rel="stylesheet" href="${static.url('js/vendor/fancybox/jquery.fancybox.css?v=2.1.5')}" type="text/css" media="screen" />
+
+<script type="text/javascript" src="${static.url('js/vendor/fancybox/jquery.fancybox.pack.js?v=2.1.5')}"></script>
+<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+<script type="text/javascript" src="${static.url('js/vendor/jquery.payment.js')}"></script>
 
 <script type="text/javascript">
 
@@ -21,22 +27,63 @@ $(document).ready(function() {
         currency: "${ price['currency'] }"
       },
 
-      addTokenToForm = function(res) {
-        var $input = $('<input type="hidden" id="payment_token" name="payment_token" />').val(res.id);
-        $('#enrollment-pay-form').append($input).submit();
+      validateFields = function() {
+        // start fancybox loading animation
+        $.fancybox.showLoading();
+
+        $('input').removeClass('invalid');
+        $('.validation').removeClass('passed failed');
+
+        var cardType = $.payment.cardType($('.cc-number').val());
+
+        $('.cc-number').toggleClass('invalid', !$.payment.validateCardNumber($('.cc-number').val()));
+        $('.cc-exp').toggleClass('invalid', !$.payment.validateCardExpiry($('.cc-exp').payment('cardExpiryVal')));
+        $('.cc-cvc').toggleClass('invalid', !$.payment.validateCardCVC($('.cc-cvc').val(), cardType));
+
+        if ( $('input.invalid').length ) {
+          $('.validation').addClass('failed');
+        } else {
+          $('.validation').addClass('passed');
+        }
       },
 
-      showPaymentModal = function() {
-        StripeCheckout.open({
-          key:         "${settings.STRIPE_KEY_PUBLIC}",
-          address:     false,
-          amount:      price.value * 100,
-          currency:    price.currency,
-          name:        "Online Course",
-          description: "Enrollment for one session",
-          panelLabel:  "Pay",
-          token:       addTokenToForm
-        });
+      submitPayment = function() {
+        var $form = $('#payment-form'),
+            expDate = $('#date-input').payment('cardExpiryVal'),
+            email = $('#card-email-input').val();
+            
+        // Disable the submit button to prevent repeated clicks
+        $form.find('.payment-button').prop('disabled', true);
+
+        console.log('creating stripe token');
+        Stripe.createToken({
+          number: $('#card-input').val(),
+          cvc: $('#cvc-input').val(),
+          exp_month: expDate.month,
+          exp_year: expDate.year
+        }, stripeResponseHandler);
+      },
+
+      stripeResponseHandler = function(status, response) {
+        var $form = $('#payment-form');
+        $form.find('.payment-button').prop('disabled', false);
+
+        if (response.error) {
+          // Show the errors on the form
+          $.fancybox.hideLoading();
+          $.fancybox({ 'title' : 'Error', 'content' : 'Something went wrong. Please make sure you properly entered your credit card information.', 'maxWidth': '500' });
+        } else {
+          // token contains id, last4, and card type
+          var token = response.id;
+          // Insert the token into the form so it gets submitted to the server
+          $form.append($('<input type="hidden" name="payment_token" id="payment_token" />').val(token));
+          // Delete credit card details to avoid transmitting to the server
+          $('#card-input', $form).val('');
+          $('#date-input', $form).val('');
+          $('#cvc-input', $form).val('');
+          // and re-submit
+          $form.submit();
+        }
       },
 
       updatePrice = function(e) {
@@ -56,12 +103,12 @@ $(document).ready(function() {
           type: 'GET',
           data: {
             course_id: '${course_id}',
-            coupon: $('#coupon').val()
+            coupon: $('.promo-field').val()
           },
           dataType: 'json',
           success: function(result){
             price = result.price;
-            $('#price-with-coupon').html('$'+price.value+' '+price.currency);
+            $('#price-with-coupon').html('$'+price.value);
             updating = false;
           },
           error: function() {
@@ -72,17 +119,29 @@ $(document).ready(function() {
         });
       };
 
-  $("#coupon").keyup(function(e) {
+  Stripe.setPublishableKey("${settings.STRIPE_KEY_PUBLIC}");
+
+  $(".promo-field").keyup(function(e) {
     updatePrice(e);
   }).bind("paste", function(e) {
     // Catch mouse right-click paste
     setTimeout(function() { updatePrice(e); }, 100);
   });
   
-  $('#pay-button').on('click', function(e) {
+  $('.payment-button').on('click', function(e) {
     e.preventDefault();
-    showPaymentModal();
+    // Call asynchronously to avoid blocking the flow
+    setTimeout(function () {
+      validateFields();
+    }, 10);
+    submitPayment();
   });
+
+  $('[data-numeric]').payment('restrictNumeric');
+  $('.cc-number').payment('formatCardNumber');
+  $('.cc-exp').payment('formatCardExpiry');
+  $('.cc-cvc').payment('formatCardCVC');
+
 });
 </script>
 </%block>
@@ -103,40 +162,55 @@ $(document).ready(function() {
 </div>
 %endif
 
-<div class="container">
-  <section class="wrapper">
+<div class="checkout-form">
+  <div>
+    <div class="w-row">
+      <div class="w-col w-col-8">
+        <div class="payment-fields-div">
+          <h2 class="checkouth2">    Payment Information:</h2>
+          <h3 class="checkouth3">Tuition: <span id="price-with-coupon">$${price['value']} ${price['currency']}</span></h3>
+          <div class="w-form payment-form-block">
+            <form id="payment-form" autocomplete="on" novalidate="" method="post">
 
-    <%include file="/verify_student/_verification_header.html" args="course_name=course_name" />
+              <input class="w-input payment-field cc-number" id="card-input" type="text" placeholder="Card Number" name="creditcardnumber" data-name="CreditCardNumber" required="required" data-stripe="number"></input>
 
-    <div class="wrapper-register-pay wrapper-content-main">
-      <article class="register-pay content-main">
-        <h3 class="title">${_("Payment")}</h3>
+              <div class="w-row">
+                <div class="w-col w-col-6">
 
-        <form class="form-register-choose" method="post" name="enrollment-pay-form" id="enrollment-pay-form">
+                  <input class="w-input payment-field exp-date cc-exp" id="date-input" type="text" placeholder="Expires (MM/DD)" name="expdate" data-name="ExpDate" required="required" data-stripe="date"></input>
 
-          <div class="register-choice register-choice-certificate">
-            <div class="wrapper-copy">
-              <span class="deco-ribbon"></span>
-              <h4 class="title">${_("Enrollment for one session")}</h4>
-              <div class="copy">
-                <p>${_("Price:")} <span id="price-with-coupon">$${price['value']} ${price['currency']}</span></p>
-                <p>Coupon code (if you have one):</p>
-                <input type="text" size="20" name="coupon" id="coupon" value=""/>
+                </div>
+                <div class="w-col w-col-6">
+
+                  <input class="w-input payment-field sec-code cc-cvc" id="cvc-input" type="text" placeholder="Security Code" name="securitycode" data-name="SecurityCode" required="required" autocomplete="off" data-stripe="cvc"></input>
+
+                </div>
               </div>
-            </div>
-
-            <ul class="list-actions">
-              <li class="action action-select">
-                <input id="pay-button" type="submit" name="mode" value="Pay" />
-              </li>
-            </ul>
+              <label class="promo-label" for="name">If you have a promo code, your discount will be applied upon payment.</label>
+              <input class="w-input payment-field promo-field" type="text" placeholder="Promo Code (if you have one)" name="coupon" data-name="Coupon"></input>
+              <input class="w-button payment-button" type="submit" value="Submit Payment" data-wait="Please wait..."></input>
+              <input type="hidden" name="csrfmiddlewaretoken" value="${ csrf_token }">
+            </form>
           </div>
-
-          <input type="hidden" name="csrfmiddlewaretoken" value="${ csrf_token }">
-        </form>
-      </article>
-    </div> <!-- /wrapper-content-main -->
-
-  </section>
+        </div>
+      </div>
+      <div class="w-col w-col-4">
+        <div class="payment-info-div">
+          <h3 class="checkouth3">Why sign up?</h3>
+        </div>
+        <p class="payment-paragraph">- 7 day money-back guarantee
+            <br>- Unlimited Access
+            <br>- Join a growing community
+            <br>- Change careers
+            <br>- Learn to innovate</p>
+      </div>
+    </div>
+  </div>
+  <div class="below-payment">
+    <h4 class="checkouth4">What our students are saying:</h4>
+    <div class="quotes">“Code Coalition's discussion board is one of the best resources for a beginning iOS developer. So much help being offered” - Omar Shaik</div>
+    <div class="quotes">“I've just completed the iOS101 course, which I thought was a great intro to the XCode environment... I feel it's been well worth the investment. ” - Herdy Handoko</div>
+  </div>
 </div>
+
 </%block>
