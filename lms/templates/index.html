@@ -115,6 +115,9 @@
             <input class="w-input newsletter-input-field" type="text" placeholder="Enter Email Address"
             name="email" required="required" data-name="email"></input>
             <input type="submit" class="button newsletter" value="Submit" />
+              % if newsletter_error is not UNDEFINED:
+              <div class="newsletter-error">${ newsletter_error }</div>
+              % endif
             % else:
             <p class="sample-content-p"><strong><em>Subscription successful!</em></strong></p>
             % endif

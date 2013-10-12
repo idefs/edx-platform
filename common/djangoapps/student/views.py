@@ -1,6 +1,7 @@
 """
 Student Views
 """
+from mailchimp.chimpy.chimpy import ChimpyException
 from mailchimp.utils import get_connection as mailchimp_get_connection
 
 import datetime
@@ -120,12 +121,18 @@ def newsletter_subscribe(request):
     Allow to register to the newsletter
     """
     subscribed = False
+    error = ''
     if request.POST['email']:
          email_address = request.POST['email']
-         mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_NEWSLETTER_LIST_ID)
-         mc_list.subscribe(email_address, {'EMAIL':email_address})
-         subscribed = True
-    return index(request, extra_context={'newsletter_subscribed': subscribed})
+         try:
+             mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_NEWSLETTER_LIST_ID)
+             mc_list.subscribe(email_address, {'EMAIL':email_address})
+         except ChimpyException as e:
+             error = str(e).split(':\n')[0]
+         else:
+             subscribed = True
+    return index(request, extra_context={'newsletter_subscribed': subscribed, 
+                                         'newsletter_error': error})
 
 def course_from_id(course_id):
     """Return the CourseDescriptor corresponding to this course_id"""
@@ -1210,6 +1217,13 @@ def activate_account(request, key):
             for cea in ceas:
                 if cea.auto_enroll:
                     CourseEnrollment.enroll(student[0], cea.course_id)
+
+        # Register to user newsletter
+        try:
+            mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_USER_LIST_ID)
+            mc_list.subscribe(request.user.email, {'EMAIL': request.user.email}, double_optin=False)
+        except ChimpyException:
+            pass
 
         resp = render_to_response(
             "registration/activation_complete.html",

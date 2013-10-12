@@ -1066,4 +1066,5 @@ STRIPE_KEY_SECRET = 'sk_test_TddMoykYgyC7rfxs13USIi0Y'
 ####################### Mailchimp #####################################
 
 MAILCHIMP_API_KEY = ''
-MAILCHIMP_NEWSLETTER_LIST_ID = 'newsletter'
+MAILCHIMP_NEWSLETTER_LIST_ID = ''
+MAILCHIMP_USER_LIST_ID = ''
