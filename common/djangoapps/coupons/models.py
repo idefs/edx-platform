@@ -18,11 +18,18 @@ Mode = namedtuple('Mode', ['slug', 'name', 'min_price', 'suggested_prices', 'cur
 # Functions ###################################################################
 
 def get_base_price_for_course_id(course_id):
-    mode = CourseMode.modes_for_course_dict(course_id)['pay_with_coupon']
-    return {
-        'value': mode.min_price,
-        'currency': mode.currency
-    }
+    modes = CourseMode.modes_for_course_dict(course_id)
+    if 'pay_with_coupon' in modes:
+        mode = modes['pay_with_coupon']
+        return {
+            'value': mode.min_price,
+            'currency': mode.currency
+        }
+    else:
+        return {
+            'value': 0,
+            'currency': None
+        }
 
 
 # Models ######################################################################

@@ -5,6 +5,8 @@
   from courseware.access import has_access
   from django.conf import settings
 
+  from coupons.views import get_base_price_for_course_id
+
   if settings.MITX_FEATURES.get('ENABLE_SHOPPING_CART'):
       cart_link = reverse('shoppingcart.views.show_cart')
   else:
@@ -256,6 +258,15 @@
           % if get_course_about_section(course, "prerequisites"):
             <li class="prerequisites"><div class="icon prereq"></div><p>${_("Prerequisites")}</p><span class="start-date">${get_course_about_section(course, "prerequisites")}</span></li>
           % endif
+
+          <li><div class="icon course-number"></div><p>${_("Price")}</p>
+          <span class="course-number">
+            % if get_base_price_for_course_id(course.id)['value']:
+            $${get_base_price_for_course_id(course.id)['value']}
+            % else:
+            Free
+            % endif
+          </span></li>
         </ol>
       </section>
 
