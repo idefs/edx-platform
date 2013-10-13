@@ -116,23 +116,6 @@ def index(request, extra_context={}, user=None):
     context.update(extra_context)
     return render_to_response('index.html', context)
 
-def newsletter_subscribe(request):
-    """
-    Allow to register to the newsletter
-    """
-    subscribed = False
-    error = ''
-    if request.POST['email']:
-         email_address = request.POST['email']
-         try:
-             mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_NEWSLETTER_LIST_ID)
-             mc_list.subscribe(email_address, {'EMAIL':email_address})
-         except ChimpyException as e:
-             error = str(e).split(':\n')[0]
-         else:
-             subscribed = True
-    return index(request, extra_context={'newsletter_subscribed': subscribed, 
-                                         'newsletter_error': error})
 
 def course_from_id(course_id):
     """Return the CourseDescriptor corresponding to this course_id"""
@@ -375,6 +358,60 @@ def dashboard(request):
 
     return render_to_response('dashboard.html', context)
 
+# Mailchimp lists #############################################################
+
+def newsletter_subscribe(request):
+    """
+    Allow to register to the newsletter
+    """
+    subscribed = False
+    error = ''
+    if request.POST['email']:
+         email_address = request.POST['email']
+         try:
+             mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_NEWSLETTER_LIST_ID)
+             mc_list.subscribe(email_address, {'EMAIL':email_address})
+         except ChimpyException as e:
+             log.info(e)
+             error = str(e).split(':\n')[0]
+         else:
+             subscribed = True
+    return index(request, extra_context={'newsletter_subscribed': subscribed, 
+                                         'newsletter_error': error})
+
+def courses_list_subscribe(user):
+    """
+    Register a new user to the list for users
+    """
+    try:
+        mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_USER_LIST_ID)
+        mc_list.subscribe(user.email, {'EMAIL': user.email}, double_optin=False)
+    except ChimpyException as e:
+        log.exception(e)
+    else:
+        update_courses_list_subscriptions(user)
+
+def update_courses_list_subscriptions(user):
+    """
+    Update the groups in mailchimp for the specified user, based on
+    his course enrollments. To be called every time a user changes his
+    course enrollments
+    """
+    courses_ids = [e.course_id.split('/')[1]
+                   for e in CourseEnrollment.enrollments_for_user(user)]
+    try:
+        mc_connection = mailchimp_get_connection()
+        mc_connection.con.list_update_member(
+            settings.MAILCHIMP_USER_LIST_ID,
+            user.email,
+            {'GROUPINGS': [{
+                'id': settings.MAILCHIMP_USER_LIST_GROUP_LIST_ID,
+                'groups': ",".join(courses_ids)
+            }]})
+    except Exception as e:
+        log.exception(e)
+
+# /Mailchimp lists ############################################################
 
 def try_change_enrollment(request):
     """
@@ -467,6 +504,8 @@ def change_enrollment(request):
 
         CourseEnrollment.enroll(user, course.id, mode=current_mode.slug)
 
+        update_courses_list_subscriptions(user)
+
         return HttpResponse()
 
     elif action == "add_to_cart":
@@ -485,6 +524,8 @@ def change_enrollment(request):
     elif action == "unenroll":
         try:
             CourseEnrollment.unenroll(user, course_id)
+
+            update_courses_list_subscriptions(user)
 
             org, course_num, run = course_id.split("/")
             dog_stats_api.increment(
@@ -1218,12 +1259,8 @@ def activate_account(request, key):
                 if cea.auto_enroll:
                     CourseEnrollment.enroll(student[0], cea.course_id)
 
-        # Register to user newsletter
-        try:
-            mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_USER_LIST_ID)
-            mc_list.subscribe(request.user.email, {'EMAIL': request.user.email}, double_optin=False)
-        except ChimpyException:
-            pass
+        # Register to user mailing list
+        courses_list_subscribe(request.user)
 
         resp = render_to_response(
             "registration/activation_complete.html",
