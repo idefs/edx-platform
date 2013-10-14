@@ -1,16 +1,19 @@
 
 # Imports #####################################################################
 
+import datetime
 import json
 from mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.test.client import RequestFactory
+from django.utils.timezone import utc
 
 from coupons.models import Coupon, get_base_price_for_course_id
 from coupons.views import CouponCheckoutView, price_with_coupon
 from course_modes.models import CourseMode
+from student.tests.factories import CourseEnrollmentFactory
 
 
 # Classes #####################################################################
@@ -27,9 +30,13 @@ class CouponTest(TestCase):
         self.user = User.objects.create_user('test', 'test@example.com', 'test')
         self.client.login(username='test', password='test')
 
-    def create_mode(self, mode_slug, mode_name, min_price=0, suggested_prices='', currency='usd'):
+    def create_mode(self, mode_slug, mode_name, min_price=0, suggested_prices='', currency='usd',
+                          course_id=None):
+        if course_id is None:
+            course_id = self.course_id
+
         return CourseMode.objects.get_or_create(
-            course_id=self.course_id,
+            course_id=course_id,
             mode_display_name=mode_name,
             mode_slug=mode_slug,
             min_price=min_price,
@@ -37,11 +44,11 @@ class CouponTest(TestCase):
             currency=currency
         )
 
-    def create_coupon(self, coupon_name, price_reduction, currency='usd'):
+    def create_coupon(self, coupon_name, price_reduction, **kwargs):
         return Coupon.objects.get_or_create(
             coupon_name=coupon_name,
             price_reduction=price_reduction,
-            currency=currency
+            **kwargs
         )
 
     def test_get_base_price_for_course_id(self):
@@ -67,6 +74,64 @@ class CouponTest(TestCase):
         coupon, created = self.create_coupon('test-coupon2', 25, currency='eur')
         self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
             'value': 100,
+            'currency': 'usd'
+        })
+
+    def test_get_price_with_coupon_valid_nb_times(self):
+        """
+        Should not return a reduced price when a maximum nb of uses is exceeded
+        """
+        coupon, created = self.create_coupon('test-coupon2', 30, valid_nb_times=2)
+        self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
+            'value': 70,
+            'currency': 'usd'
+        })
+        CourseEnrollmentFactory.create(course_id=self.course_id, coupon=coupon)
+        self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
+            'value': 70,
+            'currency': 'usd'
+        })
+        CourseEnrollmentFactory.create(course_id=self.course_id, coupon=coupon)
+        self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
+            'value': 100,
+            'currency': 'usd'
+        })
+
+    @patch('coupons.models.timezone.now')
+    def test_get_price_with_coupon_valid_until(self, mock_now):
+        """
+        Should not return a reduced price when the maximum date is exceeded
+        """
+        valid_until = datetime.datetime(2013, 1, 2, 0, 0, tzinfo=utc)
+        coupon, created = self.create_coupon('test-coupon2', 30, valid_until=valid_until)
+
+        mock_now.return_value = datetime.datetime(2013, 1, 1, 0, 0, tzinfo=utc)
+        self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
+            'value': 70,
+            'currency': 'usd'
+        })
+
+        mock_now.return_value = datetime.datetime(2013, 1, 3, 0, 0, tzinfo=utc)
+        self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
+            'value': 100,
+            'currency': 'usd'
+        })
+
+    def test_get_price_with_coupon_valid_course_id(self):
+        """
+        Should not return a reduced price when a coupon is valid with a specific
+        course_id, and the price difference is asked on a different course_id
+        """
+        coupon, created = self.create_coupon('test-coupon2', 30, valid_course_id=self.course_id)
+
+        self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
+            'value': 70,
+            'currency': 'usd'
+        })
+
+        self.create_mode('pay_with_coupon', 'Pay with coupon', min_price=40, course_id='other/course/id')
+        self.assertEqual(coupon.get_price_with_coupon('other/course/id'), {
+            'value': 40,
             'currency': 'usd'
         })
 
