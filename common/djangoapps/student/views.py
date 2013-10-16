@@ -1,7 +1,6 @@
 """
 Student Views
 """
-from mailchimp.chimpy.chimpy import ChimpyException
 from mailchimp.utils import get_connection as mailchimp_get_connection
 
 import datetime
@@ -371,7 +370,7 @@ def newsletter_subscribe(request):
          try:
              mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_NEWSLETTER_LIST_ID)
              mc_list.subscribe(email_address, {'EMAIL':email_address})
-         except ChimpyException as e:
+         except Exception as e:
              log.info(e)
              error = str(e).split(':\n')[0]
          else:
@@ -386,7 +385,7 @@ def courses_list_subscribe(user):
     try:
         mc_list = mailchimp_get_connection().get_list_by_id(settings.MAILCHIMP_USER_LIST_ID)
         mc_list.subscribe(user.email, {'EMAIL': user.email}, double_optin=False)
-    except ChimpyException as e:
+    except Exception as e:
         log.exception(e)
     else:
         update_courses_list_subscriptions(user)
@@ -1259,8 +1258,8 @@ def activate_account(request, key):
                 if cea.auto_enroll:
                     CourseEnrollment.enroll(student[0], cea.course_id)
 
-        # Register to user mailing list
-        courses_list_subscribe(request.user)
+            # Register to user mailing list
+            courses_list_subscribe(student[0])
 
         resp = render_to_response(
             "registration/activation_complete.html",
