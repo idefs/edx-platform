@@ -5,6 +5,7 @@ Allow to use discount codes for payment, using Stripe
 # Imports #####################################################################
 
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils import timezone
 from collections import namedtuple
 
@@ -90,6 +91,15 @@ class Coupon(models.Model):
         return u"{} : reduction={}, currency={}".format(
             self.coupon_name, self.price_reduction, self.currency
         )
+
+
+class UserBillingProfile(models.Model):
+    """
+    Student account details related to billing
+    """
+    user = models.ForeignKey(User, db_index=True, related_name='billing_profile', unique=True)
+    stripe_customer_id = models.CharField(blank=True, max_length=30)
+    last_changed_at = models.DateTimeField(auto_now=True)
 
 
 

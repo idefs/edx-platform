@@ -13,7 +13,7 @@ from django.utils.timezone import utc
 from coupons.models import Coupon, get_base_price_for_course_id
 from coupons.views import CouponCheckoutView, price_with_coupon
 from course_modes.models import CourseMode
-from student.tests.factories import CourseEnrollmentFactory
+from student.tests.factories import UserProfileFactory, CourseEnrollmentFactory
 
 
 # Classes #####################################################################
@@ -28,7 +28,12 @@ class CouponTest(TestCase):
         self.coupon, created = self.create_coupon(self.coupon_name, 25)
 
         self.user = User.objects.create_user('test', 'test@example.com', 'test')
+        UserProfileFactory.create(user=self.user, name='Gary Test')
         self.client.login(username='test', password='test')
+
+        class mock_customer(object):
+            id = 'customer_test_id_32'
+        self.mock_customer = mock_customer
 
     def create_mode(self, mode_slug, mode_name, min_price=0, suggested_prices='', currency='usd',
                           course_id=None):
@@ -170,14 +175,15 @@ class CouponTest(TestCase):
             "error": None,
         })
 
-    @patch('coupons.views.course_from_id')
-    @patch('coupons.views.has_access')
-    @patch('coupons.views.stripe')
+    @patch('coupons.payment.course_from_id')
+    @patch('coupons.payment.has_access')
+    @patch('coupons.payment.stripe')
     def test_coupon_checkout_view_post(self, mock_stripe, mock_has_access, mock_course_from_id):
         """
         Test successful payment processing, without coupon
         """
         mock_has_access.return_value = True
+        mock_stripe.Customer.create.return_value = self.mock_customer
 
         coupon_checkout_view = CouponCheckoutView.as_view()
         request = self.factory.post('/coupons/checkout/{}'.format(self.course_id), {
@@ -187,22 +193,29 @@ class CouponTest(TestCase):
         response = coupon_checkout_view(request, self.course_id)
 
         mock_course_from_id.assert_called_once_with(self.course_id)
+        mock_stripe.Customer.create.assert_called_once_with(
+            description='Gary Test',
+            email='test@example.com',
+            card='test-token'
+        )
         mock_stripe.Charge.create.assert_called_once_with(
             amount=100*100,
             currency='usd',
             card='test-token',
-            description='test@example.com,Test/Course/Test'
+            description='test@example.com,Test/Course/Test',
+            customer='customer_test_id_32'
         )
         self.assertEqual(response.get('location'), '/dashboard')
 
-    @patch('coupons.views.course_from_id')
-    @patch('coupons.views.has_access')
-    @patch('coupons.views.stripe')
+    @patch('coupons.payment.course_from_id')
+    @patch('coupons.payment.has_access')
+    @patch('coupons.payment.stripe')
     def test_coupon_checkout_view_post_coupon(self, mock_stripe, mock_has_access, mock_course_from_id):
         """
         Test successful payment processing, with coupon
         """
         mock_has_access.return_value = True
+        mock_stripe.Customer.create.return_value = self.mock_customer
 
         coupon_checkout_view = CouponCheckoutView.as_view()
         request = self.factory.post('/coupons/checkout/{}'.format(self.course_id), {
@@ -217,15 +230,17 @@ class CouponTest(TestCase):
             amount=75*100,
             currency='usd',
             card='test-token',
-            description='test@example.com,Test/Course/Test,coupon=test-coupon'
+            description='test@example.com,Test/Course/Test,coupon=test-coupon',
+            customer='customer_test_id_32'
         )
         self.assertEqual(response.get('location'), '/dashboard')
 
     @patch('coupons.views.render_to_response')
     @patch('coupons.views.course_from_id')
-    @patch('coupons.views.has_access')
-    @patch('coupons.views.stripe')
-    def test_coupon_checkout_view_post_denied(self, mock_stripe, mock_has_access, mock_course_from_id, mock_render_to_response):
+    @patch('coupons.payment.course_from_id')
+    @patch('coupons.payment.has_access')
+    @patch('coupons.payment.stripe')
+    def test_coupon_checkout_view_post_denied(self, mock_stripe, mock_has_access, mock_course_from_id, mock_course_from_id2, mock_render_to_response):
         """
         Test denied payment processing
         """
@@ -235,9 +250,11 @@ class CouponTest(TestCase):
         def card_error(*args, **kwargs):
             raise CardError
         mock_stripe.Charge.create.side_effect = card_error
+        mock_stripe.Customer.create.return_value = self.mock_customer
 
         mock_has_access.return_value = True
         mock_course_from_id.return_value.display_name = 'Test Course Name'
+        mock_course_from_id2.return_value.display_name = 'Test Course Name'
 
         coupon_checkout_view = CouponCheckoutView.as_view()
         request = self.factory.post('/coupons/checkout/{}'.format(self.course_id), {
@@ -250,7 +267,8 @@ class CouponTest(TestCase):
             amount=100*100,
             currency='usd',
             card='test-token',
-            description='test@example.com,Test/Course/Test'
+            description='test@example.com,Test/Course/Test',
+            customer='customer_test_id_32'
         )
         mock_render_to_response.assert_called_once_with("coupons/pay_with_coupon.html", {
             "course_id": self.course_id,
