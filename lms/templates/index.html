@@ -6,58 +6,59 @@
 <%namespace name='static' file='static_content.html'/>
 
 % if True:
+<div class="homepage-content">
 
-<%block name="js_extra">
-   <script type="text/javascript">
-      $(function() {
-        var view_name = 'index';
-        $('body').addClass(view_name);
-      });
-   </script>
-</%block>
-
-<div class="w-container hero-text">
-  <h2>The best way to learn technology.</h2>
-  <h1>Get job ready</h1>
-</div>
-
-<div class="section" id="page-nav-services">
-  <div class="w-container service-columns">
-    <div class="w-row">
-      <div class="w-col w-col-4 services">
-        <img class="icon" src="${static.url('themes/stanford/images/CC_LearnIcon.png')}" height="95" alt="CC_LearnIcon.png">
-        <h3>Learn</h3>
-        <p>Watch short and easy to digest videos, read teacher notes, and check out provided supplemental material. You can always move at your own pace in our courses.</p>
+<div class="backgroundband"></div>
+<div class="abovefold">
+  <div class="subwrapper">
+    <div class="w-container lpb">
+      <div class="w-row lpb_column">
+        <div class="w-col w-col-6">
+          <img class="w-hidden-small w-hidden-tiny lpb_icon" src="${static.url('themes/stanford/images/CC_LearnIcon.png')}" alt="CC_LearnIcon.png">
+        </div>
+        <div class="w-col w-col-6">
+          <h1 class="lpb_text">LEARN</h1>
+        </div>
       </div>
-      <div class="w-col w-col-4 services">
-        <img class="icon" src="${static.url('themes/stanford/images/CC_PracticeIcon.png')}" height="95" alt="CC_PracticeIcon.png">
-        <h3>Practice</h3>
-        <p>Complete small tasks to test mastery on specific concepts. Having problems? Work with teachers and students in the discussion forums to get the help you need.</p>
+      <div class="w-row lpb_column">
+        <div class="w-col w-col-6">
+          <img class="w-hidden-small w-hidden-tiny lpb_icon" src="${static.url('themes/stanford/images/CC_PracticeIcon.png')}" alt="CC_PracticeIcon.png">
+        </div>
+        <div class="w-col w-col-6">
+          <h1 class="lpb_text">PRACTICE</h1>
+        </div>
       </div>
-      <div class="w-col w-col-4 services">
-        <img class="icon" src="${static.url('themes/stanford/images/CC_Build.png')}" height="95" alt="CC_Build.png">
-        <h3>Build</h3>
-        <p>Apply what you learn by building actual products! Use your new skills on an open source project. Add it all to your portfolio and land a sweet job!</p>
+      <div class="w-row lpb_column">
+        <div class="w-col w-col-6">
+          <img class="w-hidden-small w-hidden-tiny lpb_icon" src="${static.url('themes/stanford/images/CC_Build.png')}" alt="CC_Build.png">
+        </div>
+        <div class="w-col w-col-6">
+          <h1 class="lpb_text">BUILD</h1>
+        </div>
       </div>
     </div>
   </div>
-</div>
-<div class="section dark web" id="page-nav-portfolio">
-  <div class="w-container">
-    <div class="w-row">
-      <div class="w-col w-col-8">
-        <img class="image" src="${static.url('themes/stanford/images/CC_HiringPartners.png')}" alt="CC_HiringPartners.png">
-      </div>
-      <div class="w-col w-col-4 w-clearfix portfolio-text">
-        <h3>Connect With <br>Hiring Partners</h3>
-        <p class="hiringpartners">Portfolios from our students will be submitted to our hiring partners. Not only do we teach you the skills you need to thrive in today's job market, we also connect you with the right companies.</p><a class="button" href="mailto:john@codecoalition.com?subject=potential%20hiring%20partner">Become a hiring partner</a>
-      </div>
-    </div>
+  <div class="w-container whycc">
+    <h3 class="whycc_head">Why take a course at Code Coalition?</h3>
+    <div class="whycc_text">The builders of the 21st century are developers and hackers - people who apply programming to solve problems on the web, on mobile devices, to fly planes and guide spaceships, to analyze genomes for early detection of cancer. Possibilities are endless.
+      Once you understand the basic principles of programming, what you can create is only limited by your imagination.
+      <br>
+      <br>Code Coalition strives to provide the tools to allow you to realize the possibilities of your creativity. As with anything, learning to code is hard work and takes practice. All of our bootcamps contain at least 120 hours of content. For example,
+      the iOS Bootcamp teaches you how to create 10 small apps and 4 full fledged apps, step-by-step. Each app acts as a building block for the next, each skill becomes more ingrained with each new assignment and each assignment gets you closer to building
+      on your own.
+      <br>
+      <br>Our experience teaching at General Assembly and Queens Coalition has taught us that the best way to learn is by building. While evaluating code strings in the browser offers instant gratification and is wonderful introduction to coding, it only
+      takes you so far. Once you have committed to learning, we’re a resource you can turn to for hours of guided practice.
+      <br>
+      <br>If you have any questions, email us directly anytime. Happy coding!
+      <br>
+      <br>-John, Eliot, Teddy and Corwin</div>
   </div>
 </div>
+        
 <div class="section dark">
-  <div class="w-container">
-    <h3 class="center-tittle">Our courses</h3>
+  <div class="w-container subheader">
+    <h2 class="subheaders">ENROLL NOW</h2>
   </div>
   <div class="w-container gallery">
     <div class="w-row coursegallery">
@@ -95,10 +96,204 @@
     </div>
   </div>
 </div>
-<div class="section dark section_platform">
-  <div class="w-container">
-    <h3 class="center-tittle">The learning platform</h3>
+
+<div class="howitworks">
+  <div class="w-container subheader howitworks_bordersub">
+    <h2 class="subheaders">HOW IT WORKS</h2>
   </div>
+  <div class="w-container howitworks text">
+    <div class="w-row">
+      <div class="w-col w-col-6 howitworks_columns">
+        <h4 class="howitworksheader">Self Paced</h4>
+        <div class="howitworkstext">Our classes are self paced. You can start, pause, refresh and finish whenever you like. We highly suggest setting goals or milestones for each section. Deadlines can help you produce some of your best work.</div>
+      </div>
+      <div class="w-col w-col-6 howitworks_columns">
+        <h4 class="howitworksheader">100% Online</h4>
+        <div class="howitworkstext">We’ve taken the intensity of the in-person bootcamp experience and put online at an accessible price. Many students have formed their own study groups and meet regularly to work through course material together. We currently have Code Coalition Meetup’s running in Berlin and New York City.</div>
+      </div>
+    </div>
+  </div>
+  <div class="w-container howitworks text">
+    <div class="w-row">
+      <div class="w-col w-col-6 howitworks_columns">
+        <h4 class="howitworksheader">Supportive Community</h4>
+        <div class="howitworkstext">We have a very active and beginner friendly discussion forum. Student and teachers interact on daily basis and help one another through the material. We’re all in this together!</div>
+      </div>
+      <div class="w-col w-col-6 howitworks_columns">
+        <h4 class="howitworksheader">120 Hours of Content</h4>
+        <div class="howitworkstext">Our Bootcamps are comprised of 12 sections, containing 20-30 modules each. On average it will take a student 10hrs per section depending on familiarity with the topics covered.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="previousstudent">
+  <div class="w-container subheader">
+    <h2 class="subheaders">PREVIOUS STUDENTS</h2>
+  </div>
+  <div class="w-container previousstudent text">
+    <div class="w-row">
+      <div class="w-col w-col-4 student">
+        <div class="w-container ps_container">
+          <img class="studenttests image" src="${static.url('themes/stanford/images/students/lena.png')}" alt="Lena Jacobs">
+          <h4 class="ps_header">Lena Jacobs</h4>
+          <div class="ps_text">"I recently graduated from New York City Lab High School in Manhattan. Recently, I enrolled into a course taught by Eliot Arntz. Walking in, I had very little prior experience with coding. For two months I submerged myself in the world of Objective C, attending various office hours hosted by Eliot, in addition to his weekly classes. After just a few weeks, myself and a small group of students created an intricate app called Score. I look forward to starting Middlebury college, applying the skills I learned during the course to further explore the world of tech."</div>
+        </div>
+      </div>
+      <div class="w-col w-col-4 student">
+        <div class="w-container ps_container">
+          <img class="studenttests image" src="${static.url('themes/stanford/images/students/michelle.png')}" alt="Michelle Fernandez">
+          <h4 class="ps_header">Michelle Fernandez</h4>
+          <div class="ps_text">"I studied Architecture at Barnard College and joined the tech scene after beginning work at a bustling startup. I took an iOS course taught by Eliot Arntz because I was still trying to decide what field of programming I wanted to focus on, and I am now eagerly pursuing a career as an iOS developer. With this course, I was able to pick up iOS fairly quickly, and within a few months, I am already doing interesting contract work for a few local startups. Currently I am interning at DreamIt Ventures as a full stack developer."</div>
+        </div>
+      </div>
+      <div class="w-col w-col-4 student">
+        <div class="w-container ps_container">
+          <img class="studenttests image" src="${static.url('themes/stanford/images/students/matt.png')}" alt="Matt Parker">
+          <h4 class="ps_header">Matt Parker</h4>
+          <div class="ps_text">"I graduated from Harvard College with a degree in Economics and then worked for Morgan Stanley as an Equity Research Associate. I soon realized I wanted to pursue a career in technology so I joined the BitFountain apprentice program in New York City. After completing 3 months of work I began working on client projects and internal applications. The BitFountain apprentice program taught me the important fundamentals of programming, and I am now a full stack developer working at a company in NYC."</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="reviews">
+  <div class="w-container subheader">
+    <h2 class="subheaders">REVIEWS</h2>
+  </div>
+  <div class="w-container reviews individual leftbar">
+    <div class="reviewstext mark">"I must say that so far, this course is awesome. Having the challenging assignments, daily discussions and feedback from the instructors, has been the missing piece that I have been looking for. I have read a handful of books, watched hours of video
+      &amp; typed in a bunch of tutorials, and finally, having to work through tough assignments and applying what I have been learning, it is all starting to click - Finally!" <strong>- Mark S.</strong>
+    </div>
+  </div>
+  <div class="w-container reviews individual rightbar">
+    <div class="reviewstext omar">“Code Coalition's discussion board is one of the best resources for a beginning iOS developer. So much help being offered”
+      <strong>- Omar S.</strong>
+    </div>
+  </div>
+  <div class="w-container reviews individual leftbar">
+    <div class="reviewstext herdy">“I've just completed the iOS101 course, which I thought was a great intro to the XCode environment... I feel it's been well worth the investment. ”
+      <strong>- Herdy H.</strong>
+    </div>
+  </div>
+  <div class="w-container reviews individual rightbar">
+    <div class="reviewstext alex">“With @CodeCoalition great course material I have the confidence I'll be able to move from Construction to becoming a hired Junior Developer”<strong> 
+                                      - Alex P.</strong>
+    </div>
+  </div>
+</div>
+
+<div class="section dark web" id="page-nav-portfolio">
+  <div class="w-container">
+    <div class="w-row">
+      <div class="w-col w-col-8">
+        <img class="image" src="${static.url('themes/stanford/images/CC_HiringPartners.png')}" alt="CC_HiringPartners.png">
+      </div>
+      <div class="w-col w-col-4 w-clearfix portfolio-text">
+        <h3>Hiring Partners</h3>
+        <p class="hiringpartners">Portfolios from our students will be submitted to our hiring partners. Not only do we teach you the skills you need to thrive in today's job market, we also connect you with the right companies.</p><a class="button" href="mailto:john@codecoalition.com?subject=potential%20hiring%20partner">Become a hiring partner</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="faq _2nd_subheader">
+  <h1 class="faq header faqheader">FAQ</h1>
+</div>
+<div class="faqcontent">
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">WHAT IS CODE COALITION?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">Code Coalition is an online learning platform that strives to give students practical technology and startup skills. Students will receive short and easy to digest videos daily and will be able to immediately apply concepts learned on assigned
+        projects. Although everything can be learned individually, learning to code is much easier with a supportive environment. Students will be able to interact, ask questions, and even collaborate on projects in our online community. After completing
+        our courses, students are connected with our hiring partners so they can get into the thriving technology field.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">WHY ARE YOU DOING THIS?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">We believe that anyone can become a software developer with the right time and environment, and the job itself is fun and rewarding. We all enjoy the teaching process and after teaching students and witnessing various success stories, we decided
+        to pursue the endeavor full time. Unfortunately, the percentage of high schools offering computer science classes is decreasing even though more and more available jobs are technical.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">HOW DO I INTERACT WITH TEACHERS AND CLASSMATES?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">Students will be able to post questions, participate in discussions, and go over projects in forums. Our teachers are active in the course forums - from answering questions on those beginner bugs to providing advanced tips and techniques to solve
+        problems. We will also create videos walking you through the final coded out projects and open up discussion around key ideas.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">HOW WILL I BE GRADED?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">We don’t assign grades. The goal of Code Coalition is to teach through a series of projects. You’ll know if you completed the project because the app will work as expected. We will also provide completed examples of the apps fully coded and documented
+        by our team. You can use your apps to build your portfolio, which is the most important thing you can do to get a job as a developer.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">I HEARD YOU CAN LEARN CODING BY YOURSELF. WHY CODE COALITION?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">You can, and there are some great free resources online. However, many students can struggle finding where to begin and what they should initially pick up. We want students to learn efficiently and we provide a track so that they can focus on
+        how to build - and not on finding where or what to learn.
+        <br>
+        <br>We think that having a community around you where you can ask questions with like-minded people will help with those lingering beginner bugs, and \ allow you to simply get back to coding.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">CAN I MOVE THROUGH THE COURSES AT MY OWN PACE?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">All of our courses are self paced. You can start and finish at any time. The course titles, like iOS Beginner Bootcamp, refers to the amount of material there is in the course. We believe that a beginner will take three months to get through a
+        bootcamp, given 10hrs a week to the course. Advanced students can jump around to more challenging material, and beginners can review as often as they need.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">WILL I GET A CERTIFICATE AT THE END OF  COURSES?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">Courses will be about building your portfolio because that’s what really matters these days. We will not provide certificates for completing courses because that sways from our belief that credential is no longer the metric used for getting a
+        job.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">ARE YOU QUALIFIED TO TEACH PROGRAMMING?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">We have thousands of hours of development experience between us. In the teaching space we have taught hundreds of students through workshops, boot camps, classes, online videos, apprentice programs and one on one tutoring. As a result, we have
+        explored different teaching styles and methods. This has allowed us to test various teaching strategies, and use the one we find most effective.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">I HAVE NOT TAKEN MUCH MATH IN SCHOOL. CAN I BECOME A PROGRAMMER?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">Absolutely. Programming involves very little complex math spare for some computationally intensive apps (graphics heavy games for example). Basic knowledge of algebra is all you will need.</div>
+    </div>
+  </div>
+  <div class="w-container facontentwrapperq">
+    <div class="w-container faqsheader">
+      <h3 class="faq">DO I NEED TO LIVE IN THE UNITED STATES TO TAKE THESE COURSES?</h3>
+    </div>
+    <div class="w-container faqcontent">
+      <div class="faq faqtext">A capable computer and an internet connection is all you need.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section dark section_platform">
   <div class="w-container gallery">
     <div class="w-row">
       <div class="w-col w-col-6">
@@ -132,95 +327,7 @@
     </div>
   </div>
 </div>
-<div class="section bg-image" id="page-nav-about">
-  <div class="w-container about-text">
-    <h1 class="heading">FAQs</h1>
-  </div>
-</div>
-<div class="section">
-  <div class="w-container">
-    <div class="w-row faq-row">
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">What is Code Coalition?</h3>
-          <p class="team-text">Code Coalition is an online learning platform that strives to give students practical technology and startup skills. Students will receive short and easy to digest videos daily and will be able to immediately apply concepts learned on assigned
-            projects. Although everything can be learned individually, learning to code is much easier with a supportive environment. Students will be able to interact, ask questions, and even collaborate on projects in our online community. After completing
-            our courses, students are connected with our hiring partners so they can get into the thriving technology field.</p>
-        </div>
-      </div>
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">WHY ARE YOU DOING THIS?</h3>
-          <p class="team-text">Unfortunately, the percentage of high schools offering computer science classes is decreasing even though more and more available jobs are technical. We believe that anyone can become a software developer with the right time and environment,
-            and the job itself is fun and rewarding. We all enjoy the teaching process and after teaching students and witnessing various success stories, we decided to pursue the endeavor full time.</p>
-        </div>
-      </div>
-    </div>
-    <div class="w-row row">
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">HOW DO I INTERACT WITH TEACHERS AND CLASSMATES?</h3>
-          <p class="team-text">Students will be able to post questions, participate in discussions, and go over projects in forums. Our teachers will be active in the course forums - from answering questions on those beginner bugs to providing advanced tips and techniques
-            to solve problems. We will also create videos walking you through the final coded out projects and open up discussion around key ideas.</p>
-        </div>
-      </div>
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">HOW WILL I BE GRADED?</h3>
-          <p class="team-text">We don’t assign grades. The goal of Code Coalition is to teach through a series of projects. You’ll know if you completed the project because the app will work as expected. We will also provide completed examples of the apps fully coded and
-            documented by our team. You can use your apps to build your portfolio, which is the most important thing you can do to get a job as a developer.</p>
-        </div>
-      </div>
-    </div>
-    <div class="w-row row">
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">I heard you can learn coding by yourself. Why Code Coalition?</h3>
-          <p class="team-text">You can, and there are some great free resources online. However, many students can struggle finding where to begin and what they should initially pick up. We want students to learn efficiently and we provide a track so that they can focus
-            on how to build - and not on finding where or what to learn.
-            <br>
-            <br>Furthermore, we think that having a community around you where you can ask questions with like-minded people will help with those beginner bugs that just don’t seem to go away, and will allow you to simply get back to coding your app.</p>
-        </div>
-      </div>
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">Can I move through the courses at my own pace?</h3>
-          <p class="team-text">All of our courses are self paced. You can start and finish at any time. The course titles, like 3 Month iOS Beginner, refers to the amount of material there is in the course. We believe that a beginner will take three months to get through
-            that course. Of course advanced students can jump around to more challenging material, and beginners can review as often as they need.</p>
-        </div>
-      </div>
-    </div>
-    <div class="w-row row">
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">Will I get a certificate at the end of  courses?</h3>
-          <p class="team-text">We will not provide certificates for completing courses because that sways from our belief that credential is no longer the metric used for getting a job. Courses will be about building your portfolio because that’s what really matters these
-            days.</p>
-        </div>
-      </div>
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">ARE YOU QUALIFIED TO TEACH PROGRAMMING?</h3>
-          <p class="team-text">We have thousands of hours of development experience between us. In the teaching space we have taught hundreds of students through workshops, boot camps, classes, online videos, apprentice programs and one on one tutoring. As a result, we
-            have explored different teaching styles and methods. This has allowed us to test various teaching strategies, and use the one we find most effective.</p>
-        </div>
-      </div>
-    </div>
-    <div class="w-row row">
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">I HAVE NOT TAKEN MUCH MATH IN SCHOOL. CAN I BECOME A PROGRAMMER?</h3>
-          <p class="team-text">Absolutely. Programming involves very little complex math spare for some computationally intensive apps (graphics heavy games for example). Basic knowledge of algebra is all you’ll need.</p>
-        </div>
-      </div>
-      <div class="w-col w-col-6 w-clearfix faqcolumn">
-        <div class="info-wrapper">
-          <h3 class="name">DO I NEED TO LIVE IN THE UNITED STATES TO TAKE THeSe COURSEs?</h3>
-          <p class="team-text">No. A capable computer and an internet connection is all you need.</p>
-        </div>
-      </div>
-    </div>
-  </div>
+
 </div>
 
 % else:
