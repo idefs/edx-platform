@@ -52,7 +52,7 @@
       <br>
       <br>If you have any questions, email us directly anytime. Happy coding!
       <br>
-      <br>-John, Eliot, Teddy and Corwin</div>
+      <br>-<a href="mailto:john@codecoalition.com">John</a>, <a href="mailto:eliot@codecoalition.com">Eliot</a>, <a href="mailto:teddy@codecoalition.com">Teddy</a> and <a href="mailto:corwin@codecoalition.com">Corwin</a></div>
   </div>
 </div>
         
@@ -143,14 +143,14 @@
         <div class="w-container ps_container">
           <img class="studenttests image" src="${static.url('themes/stanford/images/students/michelle.png')}" alt="Michelle Fernandez">
           <h4 class="ps_header">Michelle Fernandez</h4>
-          <div class="ps_text">"I studied Architecture at Barnard College and joined the tech scene after beginning work at a bustling startup. I took an iOS course taught by Eliot Arntz because I was still trying to decide what field of programming I wanted to focus on, and I am now eagerly pursuing a career as an iOS developer. With this course, I was able to pick up iOS fairly quickly, and within a few months, I am already doing interesting contract work for a few local startups. Currently I am interning at DreamIt Ventures as a full stack developer."</div>
+          <div class="ps_text">"I studied Architecture at Barnard College and joined the tech scene after beginning work at a bustling startup. I took an iOS course taught by Eliot Arntz because I was still trying to decide what field of programming I wanted to focus on, and I am now eagerly pursuing a career as an iOS developer. With this course, I was able to pick up iOS fairly quickly, and within a few months, I am already doing interesting contract work for a few local startups. Currently I am interning at DreamIt Ventures as a full stack developer."<br />&nbsp;</div>
         </div>
       </div>
       <div class="w-col w-col-4 student">
         <div class="w-container ps_container">
           <img class="studenttests image" src="${static.url('themes/stanford/images/students/matt.png')}" alt="Matt Parker">
           <h4 class="ps_header">Matt Parker</h4>
-          <div class="ps_text">"I graduated from Harvard College with a degree in Economics and then worked for Morgan Stanley as an Equity Research Associate. I soon realized I wanted to pursue a career in technology so I joined the BitFountain apprentice program in New York City. After completing 3 months of work I began working on client projects and internal applications. The BitFountain apprentice program taught me the important fundamentals of programming, and I am now a full stack developer working at a company in NYC."</div>
+          <div class="ps_text">"I graduated from Harvard College with a degree in Economics and then worked for Morgan Stanley as an Equity Research Associate. I soon realized I wanted to pursue a career in technology so I joined the BitFountain apprentice program in New York City. After completing 3 months of work I began working on client projects and internal applications. The BitFountain apprentice program taught me the important fundamentals of programming, and I am now a full stack developer working at a company in NYC."<br />&nbsp;</div>
         </div>
       </div>
     </div>
@@ -289,41 +289,6 @@
     </div>
     <div class="w-container faqcontent">
       <div class="faq faqtext">A capable computer and an internet connection is all you need.</div>
-    </div>
-  </div>
-</div>
-
-<div class="section dark section_platform">
-  <div class="w-container gallery">
-    <div class="w-row">
-      <div class="w-col w-col-6">
-        <div class="w-clearfix sample-content-div">
-          <form action="${reverse('newsletter_subscribe')}#newsletter" method="post" >
-            <div style="display:none">
-              <input type="hidden" name="csrfmiddlewaretoken" value="${csrf_token}" />
-            </div>
-            <a name="newsletter"></a>
-            <h4>Coming Soon: New Courses!</h4>
-            <p class="sample-content-p">We're creating new content every day. Sign-up for our newsletter and we'll notify you about upcoming courses. We'll even throw in some weekly tips!</p>
-
-            % if not newsletter_subscribed:
-            <input class="w-input newsletter-input-field" type="text" placeholder="Enter Email Address"
-            name="email" required="required" data-name="email"></input>
-            <input type="submit" class="button newsletter" value="Submit" />
-              % if newsletter_error is not UNDEFINED:
-              <div class="newsletter-error">${ newsletter_error }</div>
-              % endif
-            % else:
-            <p class="sample-content-p"><strong><em>Subscription successful!</em></strong></p>
-            % endif
-          </form>
-        </div>
-      </div>
-      <div class="w-col w-col-6">
-        <div class="w-embed w-iframe">
-          <iframe src="//player.vimeo.com/video/73036593" width="500" height="281" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
-        </div>
-      </div>
     </div>
   </div>
 </div>
