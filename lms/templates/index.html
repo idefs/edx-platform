@@ -5,6 +5,22 @@
 <%inherit file="main.html" />
 <%namespace name='static' file='static_content.html'/>
 
+<%block name="js_extra">
+<link rel="stylesheet" href="${static.url('js/vendor/fancybox/jquery.fancybox.css?v=2.1.5')}" type="text/css" media="screen" />
+<script type="text/javascript" src="${static.url('js/vendor/fancybox/jquery.fancybox.pack.js?v=2.1.5')}"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+  $('a.course-coming-soon').click(function(ev) {
+    ev.preventDefault();
+    $.fancybox.hideLoading();
+    $.fancybox({'content' : 'Coming soon!', 'maxWidth': '500' });
+    console.log('ok!');
+  });
+});
+</script>
+</%block>
+
 % if True:
 <div class="homepage-content">
 
@@ -81,9 +97,9 @@
         </a>
       </div>
       <div class="w-col w-col-2">
-        <a class="w-inline-block course-link-block" href="/courses/CodeCoalition/SL101/2014_Spring/about">
-          <img class="startuplaw-image" src="${static.url('themes/stanford/images/CC_1WeekLaw.png')}" alt="CC_1WeekLaw.png">
-          <h1 class="courseh1">Startup Law Module</h1>
+        <a class="w-inline-block course-link-block course-coming-soon" href="#">
+          <img class="startuplaw-image" src="${static.url('themes/stanford/images/CC_3MonthADViOS.png')}" alt="iOS">
+          <h1 class="courseh1">iOS Game Development Bootcamp</h1>
         </a>
       </div>
       <div class="w-col w-col-2">
