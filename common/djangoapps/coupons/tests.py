@@ -201,7 +201,6 @@ class CouponTest(TestCase):
         mock_stripe.Charge.create.assert_called_once_with(
             amount=100*100,
             currency='usd',
-            card='test-token',
             description='test@example.com,Test/Course/Test',
             customer='customer_test_id_32'
         )
@@ -229,7 +228,6 @@ class CouponTest(TestCase):
         mock_stripe.Charge.create.assert_called_once_with(
             amount=75*100,
             currency='usd',
-            card='test-token',
             description='test@example.com,Test/Course/Test,coupon=test-coupon',
             customer='customer_test_id_32'
         )
@@ -266,7 +264,6 @@ class CouponTest(TestCase):
         mock_stripe.Charge.create.assert_called_once_with(
             amount=100*100,
             currency='usd',
-            card='test-token',
             description='test@example.com,Test/Course/Test',
             customer='customer_test_id_32'
         )
