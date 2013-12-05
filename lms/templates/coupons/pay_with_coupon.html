@@ -55,13 +55,17 @@ $(document).ready(function() {
         // Disable the submit button to prevent repeated clicks
         $form.find('.payment-button').prop('disabled', true);
 
-        console.log('creating stripe token');
-        Stripe.createToken({
-          number: $('#card-input').val(),
-          cvc: $('#cvc-input').val(),
-          exp_month: expDate.month,
-          exp_year: expDate.year
-        }, stripeResponseHandler);
+        if($('.creditcard-fields').is(':visible')) {
+          console.log('creating stripe token');
+          Stripe.createToken({
+            number: $('#card-input').val(),
+            cvc: $('#cvc-input').val(),
+            exp_month: expDate.month,
+            exp_year: expDate.year
+          }, stripeResponseHandler);
+        } else {
+          submitPaymentForm();
+        }
       },
 
       stripeResponseHandler = function(status, response) {
@@ -77,13 +81,18 @@ $(document).ready(function() {
           var token = response.id;
           // Insert the token into the form so it gets submitted to the server
           $form.append($('<input type="hidden" name="payment_token" id="payment_token" />').val(token));
-          // Delete credit card details to avoid transmitting to the server
-          $('#card-input', $form).val('');
-          $('#date-input', $form).val('');
-          $('#cvc-input', $form).val('');
-          // and re-submit
-          $form.submit();
+          submitPaymentForm();
         }
+      },
+
+      submitPaymentForm = function() {
+        var $form = $('#payment-form');
+        // Delete credit card details to avoid transmitting to the server
+        $('#card-input', $form).val('');
+        $('#date-input', $form).val('');
+        $('#cvc-input', $form).val('');
+        // and re-submit
+        $form.submit();
       },
 
       updatePrice = function(e) {
@@ -107,7 +116,15 @@ $(document).ready(function() {
           },
           dataType: 'json',
           success: function(result){
-            price = result.price;
+            var price = result.price,
+                creditcard_fields = $('.creditcard-fields');
+
+            console.log(price.value);
+            if(price.value > 0) {
+              creditcard_fields.show();
+            } else {
+              creditcard_fields.hide();
+            }
             $('#price-with-coupon').html('$'+price.value);
             updating = false;
           },
@@ -130,10 +147,13 @@ $(document).ready(function() {
   
   $('.payment-button').on('click', function(e) {
     e.preventDefault();
-    // Call asynchronously to avoid blocking the flow
-    setTimeout(function () {
-      validateFields();
-    }, 10);
+
+    if($('.creditcard-fields').is(':visible')) {
+      // Call asynchronously to avoid blocking the flow
+      setTimeout(function () {
+        validateFields();
+      }, 10);
+    }
     submitPayment();
   });
 
@@ -172,21 +192,23 @@ $(document).ready(function() {
           <div class="w-form payment-form-block">
             <form id="payment-form" autocomplete="on" novalidate="" method="post">
 
-              <input class="w-input payment-field cc-number" id="card-input" type="text" placeholder="Card Number" name="creditcardnumber" data-name="CreditCardNumber" required="required" data-stripe="number"></input>
+              <div class="creditcard-fields">
+                <input class="w-input payment-field cc-number" id="card-input" type="text" placeholder="Card Number" name="creditcardnumber" data-name="CreditCardNumber" required="required" data-stripe="number"></input>
 
-              <div class="w-row">
-                <div class="w-col w-col-6">
+                <div class="w-row">
+                  <div class="w-col w-col-6">
 
-                  <input class="w-input payment-field exp-date cc-exp" id="date-input" type="text" placeholder="Expires (MM/DD)" name="expdate" data-name="ExpDate" required="required" data-stripe="date"></input>
+                    <input class="w-input payment-field exp-date cc-exp" id="date-input" type="text" placeholder="Expires (MM/DD)" name="expdate" data-name="ExpDate" required="required" data-stripe="date"></input>
 
-                </div>
-                <div class="w-col w-col-6">
+                  </div>
+                  <div class="w-col w-col-6">
 
-                  <input class="w-input payment-field sec-code cc-cvc" id="cvc-input" type="text" placeholder="Security Code" name="securitycode" data-name="SecurityCode" required="required" autocomplete="off" data-stripe="cvc"></input>
+                    <input class="w-input payment-field sec-code cc-cvc" id="cvc-input" type="text" placeholder="Security Code" name="securitycode" data-name="SecurityCode" required="required" autocomplete="off" data-stripe="cvc"></input>
 
+                  </div>
                 </div>
               </div>
-              <label class="promo-label" for="name">If you have a promo code, your discount will be applied upon payment.</label>
+              <label class="promo-label" for="name">If you have a promo code, your discount will be applied immediately.</label>
               <input class="w-input payment-field promo-field" type="text" placeholder="Promo Code (if you have one)" name="coupon" data-name="Coupon"></input>
               <input class="w-button payment-button" type="submit" value="Submit Payment" data-wait="Please wait..."></input>
               <input type="hidden" name="csrfmiddlewaretoken" value="${ csrf_token }">

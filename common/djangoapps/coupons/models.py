@@ -85,6 +85,11 @@ class Coupon(models.Model):
                 (not self.valid_until or timezone.now() <= self.valid_until) and \
                 (not self.valid_course_id or self.valid_course_id == course_id):
             price['value'] -= self.price_reduction
+
+        # Coupon can make the course free
+        if price['value'] <= 0:
+            price['value'] = 0
+
         return price
 
     def __unicode__(self):

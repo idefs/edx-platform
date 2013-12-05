@@ -82,6 +82,16 @@ class CouponTest(TestCase):
             'currency': 'usd'
         })
 
+    def test_get_price_with_coupon_below_zero(self):
+        """
+        Should return 0 when the price gets below zero with the coupon
+        """
+        coupon, created = self.create_coupon('test-coupon2', 500, currency='usd')
+        self.assertEqual(coupon.get_price_with_coupon(self.course_id), {
+            'value': 0,
+            'currency': 'usd'
+        })
+
     def test_get_price_with_coupon_valid_nb_times(self):
         """
         Should not return a reduced price when a maximum nb of uses is exceeded
@@ -231,6 +241,28 @@ class CouponTest(TestCase):
             description='test@example.com,Test/Course/Test,coupon=test-coupon',
             customer='customer_test_id_32'
         )
+        self.assertEqual(response.get('location'), '/dashboard')
+
+    @patch('coupons.payment.course_from_id')
+    @patch('coupons.payment.has_access')
+    @patch('coupons.payment.stripe')
+    def test_coupon_checkout_view_post_coupon_free(self, mock_stripe, mock_has_access,
+                                                         mock_course_from_id):
+        """
+        Test successful payment processing, with a coupon that made the price free,
+        and should thus not generate a payment processing
+        """
+        mock_has_access.return_value = True
+        coupon, created = self.create_coupon('test-coupon-free', 3000, valid_course_id=self.course_id)
+
+        coupon_checkout_view = CouponCheckoutView.as_view()
+        request = self.factory.post('/coupons/checkout/{}'.format(self.course_id), {
+            'coupon': 'test-coupon-free'
+        })
+        request.user = self.user
+        response = coupon_checkout_view(request, self.course_id)
+
+        mock_course_from_id.assert_called_once_with(self.course_id)
         self.assertEqual(response.get('location'), '/dashboard')
 
     @patch('coupons.views.render_to_response')

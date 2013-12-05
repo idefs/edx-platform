@@ -23,23 +23,27 @@ stripe.api_key = settings.STRIPE_KEY_SECRET
 
 def pay_with_token(user, course_id, payment_token, coupon_name=''):
     course = course_from_id(course_id)
+    price = Coupon.objects.get_price_with_coupon(course_id, coupon_name)
     error_msg = ''
-    if not payment_token:
-        error_msg = _("Payment required")
+    coupon = None
+    try:
+        coupon = Coupon.objects.get(coupon_name__iexact=coupon_name)
+    except Coupon.DoesNotExist:
+        pass
+
     if not has_access(user, course, 'enroll'):
         error_msg = _("Enrollment is closed")
-    if not create_or_update_customer(user, payment_token):
-        error_msg = _("Error during registration with payment provider")
-    if not apply_payment_to_customer(user, course_id, coupon_name=coupon_name):
-        error_msg = _("Payment denied")
+    if price['value']:
+        if not payment_token:
+            error_msg = _("Payment required")
+        if not create_or_update_customer(user, payment_token):
+            error_msg = _("Error during registration with payment provider")
+        if not apply_payment_to_customer(user, course_id, coupon_name=coupon_name):
+            error_msg = _("Payment denied")
 
     if not error_msg:
         enrollment = CourseEnrollment.enroll(user, course_id)
-        try:
-            coupon = Coupon.objects.get(coupon_name__iexact=coupon_name)
-        except Coupon.DoesNotExist:
-            pass
-        else:
+        if coupon is not None:
             enrollment.coupon = coupon
             enrollment.save()
 
